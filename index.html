@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#07131f" />
     <meta name="description" content="Bonds Studio — creative systems for ideas in motion." />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINH+hmNHrzRC9D/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js" defer></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <title>Bonds Studio — Ideas in Motion</title>
     <style>
         :root {
@@ -170,6 +172,14 @@
         .module-card--signal strong { color: var(--mint); }
         .module-card--orbit strong { color: var(--cyan); }
         .module-card--studio strong { color: var(--violet); }
+        .local-map-panel { position: absolute; right: 22px; bottom: 72px; z-index: 10; display: grid; width: min(430px, 46vw); opacity: 0; pointer-events: none; transform: translateY(16px) scale(.96); transition: opacity .24s var(--ease), transform .24s var(--ease); }
+        .earth-stage--local-map .local-map-panel { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+        .local-map-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid rgba(117,230,255,.24); border-bottom: 0; border-radius: 12px 12px 0 0; color: var(--ink); background: rgba(3,15,26,.9); font-size: .64rem; }
+        .local-map-panel__head strong { color: var(--mint); font-size: .68rem; }
+        #local-map { width: 100%; height: min(31vw, 280px); min-height: 190px; border: 1px solid rgba(117,230,255,.24); border-radius: 0 0 12px 12px; background: #0b2232; box-shadow: 0 14px 38px rgba(0,0,0,.35); }
+        .local-map-panel__meta { position: absolute; right: 8px; bottom: 8px; z-index: 500; padding: 3px 6px; border-radius: 4px; color: #e9fbff; background: rgba(3,15,26,.78); font-size: .56rem; }
+        .leaflet-control-attribution { font-size: 9px !important; }
+        @media (max-width: 700px) { .local-map-panel { right: 12px; left: 12px; bottom: 56px; width: auto; } #local-map { height: 230px; } }
         .street-explorer { position: absolute; left: 50%; bottom: -10px; z-index: 5; display: flex; align-items: center; gap: 10px; width: min(94%, 380px); padding: 10px; border: 1px solid rgba(117,230,255,.25); border-radius: 14px; background: rgba(4,17,28,.84); box-shadow: 0 18px 40px rgba(0,0,0,.24); backdrop-filter: blur(16px); transform: translateX(-50%); }
         .street-explorer select { min-width: 0; flex: 1; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #0b2232; font-size: .75rem; }
         .street-explorer select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
@@ -277,6 +287,11 @@
                     <div class="module-card module-card--signal"><small>Current signal</small><strong>Curiosity</strong></div>
                     <div class="module-card module-card--orbit"><small>In motion</small><strong>∞ ideas</strong></div>
                     <div class="module-card module-card--studio"><small>Mode</small><strong>Making</strong></div>
+                    <section class="local-map-panel" id="local-map-panel" aria-label="Progressive local map explorer" aria-live="polite">
+                        <div class="local-map-panel__head"><span>Surface detail / city → neighborhood</span><strong id="local-map-level">Globe</strong></div>
+                        <div id="local-map" role="application" aria-label="Screen-sized interactive local map"></div>
+                        <span class="local-map-panel__meta">Map data © OpenStreetMap contributors</span>
+                    </section>
                     <div class="street-explorer" aria-label="Street-level location explorer">
                         <span class="street-explorer-label">Country map → street level</span>
                         <select id="street-location-select" aria-label="Choose a location to explore at street level">
@@ -448,6 +463,7 @@
                     globe.style.setProperty('--tilt-y', `${rotationY.toFixed(2)}deg`);
                     globe.style.setProperty('--earth-scale', zoom.toFixed(3));
                     window.bondsSolar3d?.view(rotationY, rotationX);
+                    window.bondsLocalMap?.setZoom(zoom);
                     frame = 0;
                 });
             };
@@ -460,6 +476,7 @@
                 stage.classList.toggle('earth-stage--explore', active);
                 if (active) stage.focus({ preventScroll: true });
             };
+            window.bondsEarthView = { centerLocation(lat, lon) { rotationX = clamp(-lat * .42, -34, 34); rotationY = lon; render(); } };
             const resetView = () => { rotationX = 0; rotationY = 0; zoom = 1; render(); };
             exploreButton.addEventListener('click', () => setExploreView(!exploreView));
             resetViewButton.addEventListener('click', () => { resetView(); setExploreView(false); });
@@ -520,6 +537,70 @@
                 render();
             }, { passive: true });
             stage.addEventListener('touchend', () => { pinchDistance = 0; }, { passive: true });
+        })();
+    </script>
+    <script>
+        (() => {
+            const stage = document.querySelector('.earth-stage');
+            const mapElement = document.getElementById('local-map');
+            const mapLevel = document.getElementById('local-map-level');
+            const locationSelect = document.getElementById('street-location-select');
+            if (!stage || !mapElement || !mapLevel || !locationSelect) return;
+            let map;
+            let marker;
+            let selected = locationSelect.value.split(',');
+            let pendingZoom;
+            let lastMapZoom = 11;
+            const getLocation = () => ({ lat: Number(selected[0]), lon: Number(selected[1]), name: selected.slice(2).join(',') });
+            const fallback = () => {
+                const location = getLocation();
+                mapElement.innerHTML = `<div style="display:grid;place-items:center;height:100%;padding:24px;color:#d9fbff;background:radial-gradient(circle at 45% 35%,rgba(117,230,255,.16),transparent 55%),#081b2b;text-align:center;font:600 .75rem/1.6 system-ui">${navigator.onLine ? 'Map imagery is loading…' : `Offline globe detail available.<br>${location.name}<br>${location.lat.toFixed(4)}°, ${location.lon.toFixed(4)}°`}</div>`;
+            };
+            const ensureMap = () => {
+                if (map || !window.L || !navigator.onLine) { if (!map) fallback(); return; }
+                const location = getLocation();
+                mapElement.innerHTML = '';
+                map = L.map(mapElement, { zoomControl: true, scrollWheelZoom: true, worldCopyJump: true }).setView([location.lat, location.lon], 11);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' }).addTo(map);
+                marker = L.marker([location.lat, location.lon]).addTo(map).bindPopup(`<strong>${location.name}</strong><br>Community-scale map detail`).openPopup();
+                map.on('zoomend', () => updateLevel(map.getZoom()));
+                window.setTimeout(() => map.invalidateSize(), 80);
+            };
+            const updateLevel = (zoom) => {
+                const label = zoom >= 16 ? 'Community / neighborhood' : zoom >= 13 ? 'City / district' : 'Country / region';
+                mapLevel.textContent = label;
+            };
+            const updateLocation = () => {
+                selected = locationSelect.value.split(',');
+                const location = getLocation();
+                window.bondsEarthView?.centerLocation(location.lat, location.lon);
+                if (!map) { fallback(); return; }
+                map.setView([location.lat, location.lon], Math.max(map.getZoom(), 13), { animate: true });
+                marker?.setLatLng([location.lat, location.lon]).setPopupContent(`<strong>${location.name}</strong><br>Community-scale map detail`).openPopup();
+            };
+            locationSelect.addEventListener('change', updateLocation);
+            window.addEventListener('online', () => { if (!map) ensureMap(); });
+            window.addEventListener('offline', fallback);
+            window.bondsLocalMap = {
+                setZoom(value) {
+                    const active = value > 1.04;
+                    stage.classList.toggle('earth-stage--local-map', active);
+                    if (!active) return;
+                    ensureMap();
+                    if (map) {
+                        const mapZoom = Math.min(18, Math.max(11, Math.round(10 + (value - 1) * 16)));
+                        if (mapZoom === lastMapZoom) return;
+                        lastMapZoom = mapZoom;
+                        window.clearTimeout(pendingZoom);
+                        pendingZoom = window.setTimeout(() => {
+                            map.setZoom(mapZoom, { animate: false });
+                            updateLevel(mapZoom);
+                            window.setTimeout(() => map.invalidateSize(), 120);
+                        }, 120);
+                    }
+                }
+            };
+            fallback();
         })();
     </script>
     <script>
