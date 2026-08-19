@@ -393,13 +393,30 @@
                     view(x, y) { solar3d.rotation.x = y * Math.PI / 180; solar3d.rotation.y = x * Math.PI / 180; }
                 };
                 window.bondsEarth3d = { view(x, y) { globe3d.rotation.x = y * Math.PI / 180; globe3d.rotation.y = x * Math.PI / 180; } };
+                const inflateGeometry = (geometry, pressure = .024) => {
+                    const position = geometry.attributes.position;
+                    const vertex = new THREE.Vector3();
+                    for (let i = 0; i < position.count; i += 1) {
+                        vertex.fromBufferAttribute(position, i).normalize();
+                        const latitudePressure = 1 + pressure * (1 - Math.abs(vertex.y) * .35);
+                        vertex.multiplyScalar(latitudePressure);
+                        position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+                    }
+                    position.needsUpdate = true;
+                    geometry.computeVertexNormals();
+                    return geometry;
+                };
                 const loader = new THREE.TextureLoader();
                 loader.load('assets/earth-blue-marble.png', (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshPhongMaterial({ map: texture, color: 0x8fc9ed, shininess: 12, specular: new THREE.Color(0x153d54), emissive: new THREE.Color(0x061522), emissiveIntensity: .18 }));
+                    const earthGeometry = inflateGeometry(new THREE.SphereGeometry(1, 96, 64), .026);
+                    const mesh = new THREE.Mesh(earthGeometry, new THREE.MeshPhongMaterial({ map: texture, color: 0x8fc9ed, shininess: 18, specular: new THREE.Color(0x153d54), emissive: new THREE.Color(0x061522), emissiveIntensity: .18 }));
+                    mesh.castShadow = true; mesh.receiveShadow = true;
                     globe3d.add(mesh);
-                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.025, 48, 32), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .12, side: THREE.BackSide }));
+                    const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.012, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
+                    globe3d.add(depthShell);
+                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.045, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
                     globe3d.add(atmosphere);
                     addLocationLabels(THREE, globe3d);
                 });
