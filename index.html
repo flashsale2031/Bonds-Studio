@@ -432,6 +432,7 @@
                         uFrontMap: { value: texture },
                         uBackMap: { value: backTexture },
                         uBlendPower: { value: 1.65 },
+                        uSeamWidth: { value: .92 },
                         uTime: { value: 0 },
                         uAnimation: { value: 0 },
                         uLightDirection: { value: new THREE.Vector3(-.55, .4, 1).normalize() }
@@ -440,11 +441,9 @@
                         uniforms: earthUniforms,
                         side: THREE.DoubleSide,
                         vertexShader: `
-                            varying vec2 vUv;
                             varying vec3 vWorldNormal;
                             varying vec3 vWorldPosition;
                             void main() {
-                                vUv = uv;
                                 vec4 worldPosition = modelMatrix * vec4(position, 1.0);
                                 vWorldPosition = worldPosition.xyz;
                                 vWorldNormal = normalize(mat3(modelMatrix) * normal);
@@ -455,19 +454,22 @@
                             uniform sampler2D uFrontMap;
                             uniform sampler2D uBackMap;
                             uniform float uBlendPower;
+                            uniform float uSeamWidth;
                             uniform float uTime;
                             uniform float uAnimation;
                             uniform vec3 uLightDirection;
-                            varying vec2 vUv;
                             varying vec3 vWorldNormal;
                             varying vec3 vWorldPosition;
                             void main() {
                                 vec3 normal = normalize(vWorldNormal);
                                 vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
                                 float facing = abs(dot(normal, viewDirection));
-                                float normalMask = pow(clamp(1.0 - facing, 0.0, 1.0), uBlendPower);
-                                vec2 backUv = vec2(1.0 - vUv.x, vUv.y);
-                                vec4 frontColor = texture2D(uFrontMap, vUv);
+                                float normalMask = pow(smoothstep(0.0, uSeamWidth, 1.0 - facing), uBlendPower);
+                                float longitude = atan(normal.z, normal.x) / 6.28318530718 + .5;
+                                float latitude = asin(clamp(normal.y, -1.0, 1.0)) / 3.14159265359 + .5;
+                                vec2 sphericalUv = vec2(fract(longitude), clamp(latitude, 0.001, .999));
+                                vec2 backUv = vec2(fract(sphericalUv.x + .5), sphericalUv.y);
+                                vec4 frontColor = texture2D(uFrontMap, sphericalUv);
                                 vec4 backColor = texture2D(uBackMap, backUv);
                                 vec4 blendedColor = mix(frontColor, backColor, normalMask * .86);
                                 if (!gl_FrontFacing) blendedColor = mix(backColor, frontColor, normalMask * .32);
