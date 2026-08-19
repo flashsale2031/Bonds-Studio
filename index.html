@@ -156,11 +156,10 @@
         .earth-orbit::before, .earth-orbit::after { position: absolute; width: 6px; height: 6px; border-radius: 50%; content: ""; box-shadow: 0 0 18px currentColor; }
         .earth-orbit::before { top: 10%; left: 14%; color: var(--mint); background: currentColor; }
         .earth-orbit::after { right: 8%; bottom: 20%; color: var(--violet); background: currentColor; }
-        .earth-wrap { position: absolute; top: 50%; left: 50%; width: clamp(260px, 34vw, 430px); aspect-ratio: 1; transform: translate(-50%, -50%) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--earth-scale, 1)); transform-style: preserve-3d; transition: transform .2s var(--ease); touch-action: none; cursor: grab; }
+        .earth-wrap { position: absolute; top: 50%; left: 50%; width: clamp(260px, 34vw, 430px); aspect-ratio: 1; transform: translate(-50%, -50%) scale(var(--earth-scale, 1)); transform-style: preserve-3d; transition: transform .2s var(--ease); touch-action: none; cursor: grab; }
         .earth-stage--dragging .earth-wrap { cursor: grabbing; transition: none; }
-        .earth { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; background: #082b4e url('assets/earth-blue-marble.png') center / cover no-repeat; box-shadow: inset -34px -22px 54px rgba(0,0,0,.65), inset 16px 10px 28px rgba(255,255,255,.22), 0 0 0 9px rgba(117,230,255,.04), 0 0 70px rgba(70,210,255,.34), 0 0 140px rgba(181,160,255,.18); transform: translateZ(16px); }
-        .earth::before { position: absolute; inset: 0; z-index: 2; border-radius: 50%; content: ""; background: linear-gradient(118deg, transparent 35%, rgba(255,255,255,.18) 46%, transparent 53%); mix-blend-mode: screen; pointer-events: none; }
-        .earth::after { position: absolute; inset: 0; z-index: 3; border-radius: 50%; content: ""; box-shadow: inset -30px -12px 38px rgba(0,0,0,.42); pointer-events: none; }
+        .earth { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; background: transparent; box-shadow: 0 0 0 9px rgba(117,230,255,.04), 0 0 70px rgba(70,210,255,.34), 0 0 140px rgba(181,160,255,.18); transform: translateZ(16px); }
+        .earth::before, .earth::after { display: none; }
         #earth-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; border-radius: 50%; }
         .earth-label { position: absolute; left: 50%; bottom: -48px; transform: translateX(-50%); color: var(--muted); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; white-space: nowrap; }
         .module-card { position: absolute; z-index: 3; display: grid; gap: 5px; min-width: 142px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 20px 50px rgba(0,0,0,.24); backdrop-filter: blur(16px); }
@@ -393,17 +392,22 @@
                     },
                     view(x, y) { solar3d.rotation.x = y * Math.PI / 180; solar3d.rotation.y = x * Math.PI / 180; }
                 };
+                window.bondsEarth3d = { view(x, y) { globe3d.rotation.x = y * Math.PI / 180; globe3d.rotation.y = x * Math.PI / 180; } };
                 const loader = new THREE.TextureLoader();
                 loader.load('assets/earth-blue-marble.png', (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshPhongMaterial({ map: texture, shininess: 8, specular: new THREE.Color(0x153d54) }));
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshPhongMaterial({ map: texture, color: 0x8fc9ed, shininess: 12, specular: new THREE.Color(0x153d54), emissive: new THREE.Color(0x061522), emissiveIntensity: .18 }));
                     globe3d.add(mesh);
                     const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.025, 48, 32), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .12, side: THREE.BackSide }));
                     globe3d.add(atmosphere);
                     addLocationLabels(THREE, globe3d);
                 });
-                scene.add(new THREE.AmbientLight(0x8edfff, 1.05));
+                scene.add(new THREE.AmbientLight(0x8edfff, 1.15));
+                scene.add(new THREE.HemisphereLight(0xbbeeff, 0x10233b, .9));
+                const cameraFill = new THREE.PointLight(0x8edfff, .85, 7);
+                cameraFill.position.copy(camera.position);
+                scene.add(cameraFill);
                 const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
                 keyLight.position.set(-3, 2, 4);
                 keyLight.castShadow = true;
@@ -459,9 +463,9 @@
             const render = () => {
                 if (frame) return;
                 frame = requestAnimationFrame(() => {
-                    globe.style.setProperty('--tilt-x', `${rotationX.toFixed(2)}deg`);
-                    globe.style.setProperty('--tilt-y', `${rotationY.toFixed(2)}deg`);
-                    globe.style.setProperty('--earth-scale', zoom.toFixed(3));
+                    const verticalScale = 1 + Math.abs(rotationX) / 90 * .30;
+                    globe.style.setProperty('--earth-scale', (zoom * verticalScale).toFixed(3));
+                    window.bondsEarth3d?.view(rotationY, rotationX);
                     window.bondsSolar3d?.view(rotationY, rotationX);
                     window.bondsLocalMap?.setZoom(zoom);
                     frame = 0;
@@ -476,7 +480,7 @@
                 stage.classList.toggle('earth-stage--explore', active);
                 if (active) stage.focus({ preventScroll: true });
             };
-            window.bondsEarthView = { centerLocation(lat, lon) { rotationX = clamp(-lat * .42, -34, 34); rotationY = lon; render(); } };
+            window.bondsEarthView = { centerLocation(lat, lon) { rotationX = clamp(-lat * .42, -90, 90); rotationY = lon; render(); } };
             const resetView = () => { rotationX = 0; rotationY = 0; zoom = 1; render(); };
             exploreButton.addEventListener('click', () => setExploreView(!exploreView));
             resetViewButton.addEventListener('click', () => { resetView(); setExploreView(false); });
@@ -487,8 +491,8 @@
                 if (event.key === 'Home') resetView();
                 if (event.key === 'ArrowLeft') rotationY -= step;
                 if (event.key === 'ArrowRight') rotationY += step;
-                if (event.key === 'ArrowUp') rotationX = clamp(rotationX - step, -34, 34);
-                if (event.key === 'ArrowDown') rotationX = clamp(rotationX + step, -34, 34);
+                if (event.key === 'ArrowUp') rotationX = clamp(rotationX - step, -90, 90);
+                if (event.key === 'ArrowDown') rotationX = clamp(rotationX + step, -90, 90);
                 render();
             });
 
@@ -506,7 +510,7 @@
             stage.addEventListener('pointermove', (event) => {
                 if (!dragging || event.pointerId !== activePointer) return;
                 rotationY += (event.clientX - lastX) * .45;
-                rotationX = clamp(rotationX - (event.clientY - lastY) * .32, -34, 34);
+                rotationX = clamp(rotationX - (event.clientY - lastY) * .32, -90, 90);
                 lastX = event.clientX;
                 lastY = event.clientY;
                 render();
