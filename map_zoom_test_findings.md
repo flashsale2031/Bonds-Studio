@@ -46,3 +46,9 @@ The final deeper extrusion test over HTTP succeeded after restoring native spher
 Final production verification succeeded after deployment. The live Earth controller and dual-map shader are active, seam width is 0.92, and both animation and time uniforms are updating. The deeper 16-layer, 1.22× front/back extrusion is now published on the production globe.
 
 Planet sphere test succeeded over HTTP. Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, and Neptune each expose a Three.js `SphereGeometry` mesh with 48 radial segments and 32 vertical segments, plus a named depth shell. Orbital controls and the solar controller remain active.
+
+Production planet verification succeeded. The live solar controller reports all nine bodies—Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, and Neptune—as `SphereGeometry` meshes, each with a named depth shell. The deployed orbital controller remains active.
+
+Live-build diagnosis: GitHub `main` is at `03422bb4b21857545f7360facb6cfffdf1b93fbd`, and Pages run `32211700529` completed successfully for that SHA. The public HTML contains `SphereGeometry(radius, 48, 32)`, `sphereObjects`, and depth-shell markers. After unregistering one service worker and clearing one cache, a fresh production browser load reports all nine sphere objects and all nine depth shells active. The screenshot’s apparent mismatch was caused by viewing the Earth-centered state, where the planet meshes are positioned away from the focused Earth and the central Bonds Studio logo overlays the globe; it was not an older deployment.
+
+Galaxy zoom test succeeded over HTTP. Repeated wheel zoom-out gestures reached the new `.12` minimum; after the animation frame settled, the Earth stage entered `earth-stage--galaxy-view` and the Earth wrapper remained at a readable 0.912 screen scale while the Three.js camera pulled back to the galaxy-scale distance.

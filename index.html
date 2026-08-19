@@ -165,6 +165,8 @@
         .earth-orbit::after { right: 8%; bottom: 20%; color: var(--violet); background: currentColor; }
         .earth-wrap { position: absolute; top: 50%; left: 50%; width: clamp(260px, 34vw, 430px); aspect-ratio: 1; transform: translate(-50%, -50%) scale(var(--earth-scale, 1)); transform-style: preserve-3d; transition: transform .2s var(--ease); touch-action: none; cursor: grab; }
         .earth-stage--dragging .earth-wrap { cursor: grabbing; transition: none; }
+        .earth-stage--galaxy-view .space-depth { border-color: rgba(181,160,255,.28); box-shadow: inset 0 0 130px rgba(0,0,0,.56), 0 24px 100px rgba(80,120,255,.22); }
+        .earth-stage--galaxy-view::after { border-color: rgba(181,160,255,.24); box-shadow: 0 0 44px rgba(181,160,255,.14); }
         .earth { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; background: transparent; box-shadow: 0 0 0 9px rgba(117,230,255,.04), 0 0 70px rgba(70,210,255,.34), 0 0 140px rgba(181,160,255,.18); transform: translateZ(16px); }
         .earth::before, .earth::after { display: none; }
         #earth-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; border-radius: 50%; }
@@ -271,7 +273,7 @@
                         <button id="orbit-reset" type="button">Reset 10-year process</button>
                         <button id="view-explore" type="button" aria-pressed="false">Explore view</button>
                         <button id="view-reset" type="button">Reset view</button>
-                        <span class="view-hint">Drag or use arrow keys to look around Earth; wheel and pinch zoom.</span>
+                        <span class="view-hint">Drag or use arrow keys to look around Earth; wheel and pinch zoom from surface detail to galaxy view.</span>
                         <output id="orbit-calibration-output">Calibrated: prograde / Keplerian</output>
                         <output id="orbit-offline-output">Offline timeline ready</output>
                     </div>
@@ -354,8 +356,22 @@
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
+                const camera = new THREE.PerspectiveCamera(28, 1, .1, 180);
                 camera.position.z = 3.15;
+                const starPositions = new Float32Array(1800 * 3);
+                for (let i = 0; i < starPositions.length; i += 3) {
+                    const radius = 28 + Math.random() * 70;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                    starPositions[i + 1] = radius * Math.cos(phi);
+                    starPositions[i + 2] = radius * Math.sin(phi) * Math.sin(theta);
+                }
+                const starGeometry = new THREE.BufferGeometry();
+                starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+                const galaxyStars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0xbceeff, size: .055, sizeAttenuation: true, transparent: true, opacity: .72, depthWrite: false }));
+                galaxyStars.name = 'galaxy-star-field';
+                scene.add(galaxyStars);
                 const globe3d = new THREE.Group();
                 const solar3d = new THREE.Group();
                 scene.add(globe3d, solar3d);
@@ -410,6 +426,15 @@
                     view(x, y) { solar3d.rotation.x = y * Math.PI / 180; solar3d.rotation.y = x * Math.PI / 180; }
                 };
                 window.bondsEarth3d = { view(x, y) { globe3d.rotation.x = y * Math.PI / 180; globe3d.rotation.y = x * Math.PI / 180; } };
+                window.bondsEarthCamera = {
+                    setZoom(value) {
+                        const safeZoom = Math.min(1.55, Math.max(.12, value));
+                        camera.position.z = 3.15 / safeZoom;
+                        camera.fov = 28 + (1 - safeZoom) * 22;
+                        camera.updateProjectionMatrix();
+                        galaxyStars.rotation.y += .00008;
+                    }
+                };
                 const calculateSphereExtrusionLayers = (radius, numLayers) => {
                     const layers = [];
                     for (let i = 0; i <= numLayers; i += 1) {
@@ -580,7 +605,10 @@
                 if (frame) return;
                 frame = requestAnimationFrame(() => {
                     const verticalScale = 1 + Math.abs(rotationX) / 90 * .30;
-                    globe.style.setProperty('--earth-scale', (zoom * verticalScale).toFixed(3));
+                    const screenScale = (.90 + Math.min(1.55, zoom) * .10) * verticalScale;
+                    globe.style.setProperty('--earth-scale', screenScale.toFixed(3));
+                    stage.classList.toggle('earth-stage--galaxy-view', zoom < .38);
+                    window.bondsEarthCamera?.setZoom(zoom);
                     window.bondsEarth3d?.view(rotationY, rotationX);
                     window.bondsSolar3d?.view(rotationY, rotationX);
                     if (window.bondsEarthShader) { window.bondsEarthShader.uniforms.uAnimation.value = rotationY * Math.PI / 180 + rotationX * .015; }
@@ -658,7 +686,7 @@
                 activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
                 if (activePointers.size === 2) {
                     const nextDistance = pointerDistance();
-                    if (pinchDistance) zoom = clamp(zoom * (nextDistance / pinchDistance), .78, 1.55);
+                    if (pinchDistance)                     zoom = clamp(zoom * (nextDistance / pinchDistance), .12, 1.55);
                     pinchDistance = nextDistance;
                     pinchCenter = pointerMidpoint();
                     render();
@@ -686,7 +714,7 @@
             stage.addEventListener('pointercancel', releasePointer);
             stage.addEventListener('wheel', (event) => {
                 event.preventDefault();
-                zoom = clamp(zoom - event.deltaY * .0012, .78, 1.55);
+                zoom = clamp(zoom - event.deltaY * .0012, .12, 1.55);
                 render();
             }, { passive: false });
         })();
