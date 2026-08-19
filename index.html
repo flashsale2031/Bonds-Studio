@@ -133,7 +133,8 @@
         .solar-body { left: var(--orbital-left, 50%) !important; top: var(--orbital-top, 50%) !important; right: auto !important; bottom: auto !important; z-index: 2; transform: translate(-50%, -50%) scale(var(--orbital-scale, 1)); }
         .solar-body-label { position: absolute; top: calc(100% + 5px); left: 50%; color: rgba(217,251,255,.82); font-size: .55rem; font-weight: 700; letter-spacing: .07em; text-shadow: 0 1px 8px #020a12; text-transform: uppercase; transform: translateX(-50%); white-space: nowrap; }
         .geocentric-note { position: absolute; right: 22px; top: 18px; z-index: 1; max-width: 210px; color: rgba(184,224,237,.58); font-size: .58rem; line-height: 1.4; text-align: right; }
-        .planet { position: absolute; z-index: -1; display: block; border-radius: 50%; pointer-events: none; transform-style: preserve-3d; box-shadow: inset -16px -13px 22px rgba(0,0,0,.48), inset 7px 7px 12px rgba(255,255,255,.22), 0 0 32px rgba(255,255,255,.08); animation: planet-spin var(--spin-duration, 18s) linear infinite var(--spin-direction, normal), planet-drift var(--drift-duration, 12s) ease-in-out infinite; }
+        /* Celestial bodies are rendered as real Three.js sphere meshes in the WebGL scene. */
+        .planet { display: none !important; }
         .planet::after { position: absolute; inset: 16%; border-radius: 50%; opacity: .5; content: ""; background: repeating-linear-gradient(8deg, transparent 0 7px, rgba(255,255,255,.18) 8px 10px, transparent 11px 18px); filter: blur(1px); }
         .planet--sun { --spin-duration: 27s; --drift-duration: 13s; top: 7%; left: 7%; width: clamp(54px, 9vw, 96px); aspect-ratio: 1; background: radial-gradient(circle at 35% 30%, #fffbd0 0 9%, #ffd56b 28%, #f58c32 62%, #a83238 100%); box-shadow: 0 0 18px #ffd56b, 0 0 58px rgba(255,151,54,.64), inset -12px -10px 18px rgba(127,35,42,.4); }
         .planet--sun::after { opacity: .38; background: repeating-linear-gradient(-18deg, transparent 0 8px, rgba(255,242,154,.32) 9px 11px, transparent 12px 19px); }
@@ -331,7 +332,52 @@
                 const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
                 camera.position.z = 3.15;
                 const globe3d = new THREE.Group();
-                scene.add(globe3d);
+                const solar3d = new THREE.Group();
+                scene.add(globe3d, solar3d);
+                const solarMeshes = {};
+                const solarMaterials = {
+                    Sun: new THREE.MeshStandardMaterial({ color: 0xffc45f, emissive: 0xff7a26, emissiveIntensity: 2.2, roughness: .55, metalness: 0 }),
+                    Moon: new THREE.MeshStandardMaterial({ color: 0xb7c1cb, roughness: .92, metalness: 0 }),
+                    Mercury: new THREE.MeshStandardMaterial({ color: 0x927b70, roughness: .9 }),
+                    Venus: new THREE.MeshStandardMaterial({ color: 0xc8914b, roughness: .8 }),
+                    Mars: new THREE.MeshStandardMaterial({ color: 0xa94d3c, roughness: .9 }),
+                    Jupiter: new THREE.MeshStandardMaterial({ color: 0xc58c68, roughness: .82 }),
+                    Saturn: new THREE.MeshStandardMaterial({ color: 0xd4ab72, roughness: .78 }),
+                    Uranus: new THREE.MeshStandardMaterial({ color: 0x70c6cc, roughness: .72 }),
+                    Neptune: new THREE.MeshStandardMaterial({ color: 0x316bb3, roughness: .7 })
+                };
+                const solarRadii = { Sun: .22, Moon: .075, Mercury: .055, Venus: .075, Mars: .07, Jupiter: .17, Saturn: .15, Uranus: .105, Neptune: .105 };
+                const solarScale = 0.095;
+                Object.entries(solarRadii).forEach(([name, radius]) => {
+                    const body = new THREE.Group();
+                    body.name = `${name}-3d`;
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 24), solarMaterials[name]);
+                    mesh.castShadow = true; mesh.receiveShadow = true;
+                    body.add(mesh);
+                    if (name === 'Saturn') {
+                        const ring = new THREE.Mesh(new THREE.RingGeometry(radius * 1.45, radius * 2.15, 64), new THREE.MeshStandardMaterial({ color: 0xd9bb91, roughness: .72, transparent: true, opacity: .82, side: THREE.DoubleSide }));
+                        ring.rotation.x = Math.PI / 2.7;
+                        body.add(ring);
+                    }
+                    if (name === 'Sun') body.add(new THREE.PointLight(0xffc46f, 3.2, 7));
+                    solarMeshes[name] = body;
+                    solar3d.add(body);
+                });
+                window.bondsSolar3d = {
+                    meshes: solarMeshes,
+                    update(positions, focus) {
+                        Object.entries(positions).forEach(([name, p]) => {
+                            const body = solarMeshes[name]; if (!body) return;
+                            const focused = focus === name;
+                            body.position.set(focused ? 0 : p.x * solarScale, focused ? 0 : p.y * solarScale, focused ? .18 : p.z * solarScale);
+                            const base = solarRadii[name];
+                            const multiplier = focused ? (name === 'Jupiter' || name === 'Saturn' ? 2.7 : name === 'Sun' ? 2.15 : name === 'Moon' ? 3.4 : 2.8) : 1;
+                            body.scale.setScalar(multiplier);
+                            body.visible = true;
+                        });
+                    },
+                    view(x, y) { solar3d.rotation.x = y * Math.PI / 180; solar3d.rotation.y = x * Math.PI / 180; }
+                };
                 const loader = new THREE.TextureLoader();
                 loader.load('assets/earth-blue-marble.png', (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
@@ -342,9 +388,10 @@
                     globe3d.add(atmosphere);
                     addLocationLabels(THREE, globe3d);
                 });
-                scene.add(new THREE.AmbientLight(0x8edfff, 1.35));
-                const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+                scene.add(new THREE.AmbientLight(0x8edfff, 1.05));
+                const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
                 keyLight.position.set(-3, 2, 4);
+                keyLight.castShadow = true;
                 scene.add(keyLight);
 
                 const locations = [
@@ -376,7 +423,7 @@
                     return sprite;
                 }
                 const resize = () => { const size = earthCanvas.clientWidth || 320; renderer.setSize(size, size, false); camera.aspect = 1; camera.updateProjectionMatrix(); };
-                const animate = () => { requestAnimationFrame(animate); globe3d.rotation.y += .0007; renderer.render(scene, camera); };
+                const animate = () => { requestAnimationFrame(animate); globe3d.rotation.y += .0007; Object.values(solarMeshes).forEach((body) => { body.rotation.y += .0018; body.rotation.x += .00035; }); renderer.render(scene, camera); };
                 new ResizeObserver(resize).observe(earthCanvas);
                 resize(); animate();
             };
@@ -400,6 +447,7 @@
                     globe.style.setProperty('--tilt-x', `${rotationX.toFixed(2)}deg`);
                     globe.style.setProperty('--tilt-y', `${rotationY.toFixed(2)}deg`);
                     globe.style.setProperty('--earth-scale', zoom.toFixed(3));
+                    window.bondsSolar3d?.view(rotationY, rotationX);
                     frame = 0;
                 });
             };
@@ -539,7 +587,10 @@
                 const radius = 14 + 29 * Math.sqrt(clamp(distance / 30, 0, 1));
                 return { left: 50 + Math.cos(angle) * radius, top: 50 - Math.sin(angle) * radius, scale: clamp(distanceScale * (1.08 - distance * .008), .58, 1.12) };
             };
+            const solarPositions = {};
             const setPosition = (name, vector, scale = 1) => {
+                solarPositions[name] = { x: vector.x, y: vector.y, z: Math.sin(vector.x * 2.4 + vector.y) * .7 };
+                window.bondsSolar3d?.update(solarPositions, focusedBody);
                 const node = bodies[name];
                 if (!node) return;
                 const isFocused = focusedBody === name;
@@ -554,6 +605,7 @@
                 focusedBody = focusSelect.value || 'Earth';
                 stage.classList.toggle('earth-stage--focused-non-earth', focusedBody !== 'Earth');
                 focusOutput.textContent = `${focusedBody} centered`;
+                window.bondsSolar3d?.update(solarPositions, focusedBody);
             };
             const formatOutput = (date) => date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const toInputValue = (date) => { const pad = (value) => String(value).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; };
