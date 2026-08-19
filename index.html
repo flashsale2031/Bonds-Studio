@@ -111,8 +111,25 @@
         .orbit-controls__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .62rem; }
         .orbit-controls output { display: block; color: var(--mint); font-variant-numeric: tabular-nums; }
         .orbit-controls input, .orbit-controls select { width: 100%; min-width: 0; padding: 6px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #0b2232; font-size: .64rem; }
+        .orbit-focus-label { color: var(--muted); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; }
+        .solar-body--focused { z-index: 9; filter: brightness(1.16) saturate(1.15); }
+        .earth-stage--focused-non-earth .earth-wrap { opacity: .42; filter: saturate(.72); transition: opacity .3s ease, filter .3s ease; }
+        .logo-screen { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none; }
+        .logo-screen__image { width: clamp(118px, 17vw, 220px); aspect-ratio: 1; object-fit: contain; pointer-events: auto; cursor: pointer; filter: drop-shadow(0 0 18px rgba(117,230,255,.22)); transition: opacity .35s ease, transform .35s ease, filter .35s ease; touch-action: none; user-select: none; }
+        .logo-screen__image:hover { filter: drop-shadow(0 0 28px rgba(117,230,255,.48)); transform: scale(1.035); }
+        .logo-screen.is-dissolving .logo-screen__image { opacity: 0; transform: scale(1.25); filter: blur(5px) drop-shadow(0 0 30px rgba(180,230,255,.7)); }
+        .logo-smoke { position: absolute; width: clamp(140px, 22vw, 280px); aspect-ratio: 1; pointer-events: none; }
+        .logo-smoke i { position: absolute; left: 50%; top: 50%; width: clamp(8px, 1.4vw, 18px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(226,249,255,.88), rgba(147,202,218,.32) 42%, transparent 72%); opacity: 0; transform: translate(-50%, -50%) scale(.35); filter: blur(1px); }
+        .logo-screen.is-dissolving .logo-smoke i { animation: logo-smoke-burst 1.25s cubic-bezier(.16,.8,.25,1) var(--smoke-delay, 0s) forwards; }
+        @keyframes logo-smoke-burst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.25); } 18% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(-50% + var(--smoke-x)), calc(-50% + var(--smoke-y))) scale(var(--smoke-scale)); filter: blur(7px); } }
+        .logo-restore { display: none; pointer-events: auto; position: absolute; bottom: 10%; padding: 6px 10px; border: 1px solid rgba(117,230,255,.3); border-radius: 99px; color: var(--cyan); background: rgba(4,18,30,.72); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+        .logo-screen.is-hidden .logo-screen__image, .logo-screen.is-hidden .logo-smoke { display: none; }
+        .logo-screen.is-hidden .logo-restore { display: inline-flex; }
+        @media (prefers-reduced-motion: reduce) { .logo-screen__image { transition: opacity .01ms linear; } .logo-screen.is-dissolving .logo-smoke i { animation-duration: .01ms; } }
         .orbit-controls button { padding: 6px 8px; border: 1px solid rgba(117,230,255,.32); border-radius: 7px; color: var(--cyan); background: rgba(117,230,255,.08); font-size: .64rem; cursor: pointer; }
         .orbit-controls button:hover, .orbit-controls button:focus-visible { background: rgba(117,230,255,.18); outline: none; }
+        .orbit-controls button[aria-pressed="true"] { color: #06111b; background: var(--cyan); }
+        .view-hint { color: rgba(184,224,237,.6); font-size: .56rem; line-height: 1.35; }
         .solar-body { left: var(--orbital-left, 50%) !important; top: var(--orbital-top, 50%) !important; right: auto !important; bottom: auto !important; z-index: 2; transform: translate(-50%, -50%) scale(var(--orbital-scale, 1)); }
         .solar-body-label { position: absolute; top: calc(100% + 5px); left: 50%; color: rgba(217,251,255,.82); font-size: .55rem; font-weight: 700; letter-spacing: .07em; text-shadow: 0 1px 8px #020a12; text-transform: uppercase; transform: translateX(-50%); white-space: nowrap; }
         .geocentric-note { position: absolute; right: 22px; top: 18px; z-index: 1; max-width: 210px; color: rgba(184,224,237,.58); font-size: .58rem; line-height: 1.4; text-align: right; }
@@ -219,14 +236,25 @@
 
         <main>
             <section class="hero" aria-label="Bonds Studio Earth system">
-                <div class="earth-stage" id="signal" aria-label="Interactive Earth system visualization">
+                <div class="earth-stage" id="signal" tabindex="0" aria-label="Interactive Earth system visualization. Use Explore view, drag, or arrow keys to rotate around Earth.">
                     <div class="space-depth" aria-hidden="true"><span class="space-scene-label">Orbital field / Earth system</span></div>
-                    <div class="orbit-controls" aria-label="Orbital time controls">
+                    <div class="logo-screen" id="logo-screen" aria-label="Bonds Studio screen logo. Interact directly to dissolve it into smoke.">
+                        <img class="logo-screen__image" id="logo-screen-image" src="assets/bonds-studio-screen-logo-transparent.png" alt="Bonds Studio logo screen" draggable="false" />
+                        <div class="logo-smoke" id="logo-smoke" aria-hidden="true"></div>
+                        <button class="logo-restore" id="logo-restore" type="button">Restore screen</button>
+                    </div>
+                    <div class="orbit-controls" aria-label="Orbital time and view controls">
                         <div class="orbit-controls__row"><span>Simulation time</span><output id="orbit-date-output">Now</output></div>
                         <input id="orbit-date" type="datetime-local" aria-label="Set simulation date and time" />
                         <div class="orbit-controls__row"><span>Playback</span><select id="orbit-speed" aria-label="Choose orbital playback speed"><option value="1">1 day / second</option><option value="7">7 days / second</option><option value="30">30 days / second</option><option value="365">1 year / second</option></select></div>
+                        <label class="orbit-focus-label" for="body-focus">Center object</label>
+                        <select id="body-focus" aria-label="Select a planet or celestial body to center"><option value="Earth">Earth</option><option value="Sun">Sun</option><option value="Moon">Moon</option><option value="Mercury">Mercury</option><option value="Venus">Venus</option><option value="Mars">Mars</option><option value="Jupiter">Jupiter</option><option value="Saturn">Saturn</option><option value="Uranus">Uranus</option><option value="Neptune">Neptune</option></select>
+                        <output id="focus-output">Earth centered</output>
                         <button id="orbit-play" type="button">Pause simulation</button>
                         <button id="orbit-reset" type="button">Reset 10-year process</button>
+                        <button id="view-explore" type="button" aria-pressed="false">Explore view</button>
+                        <button id="view-reset" type="button">Reset view</button>
+                        <span class="view-hint">Drag or use arrow keys to look around Earth; wheel and pinch zoom.</span>
                         <output id="orbit-calibration-output">Calibrated: prograde / Keplerian</output>
                         <output id="orbit-offline-output">Offline timeline ready</output>
                     </div>
@@ -288,8 +316,10 @@
             const stage = document.querySelector('.earth-stage');
             const globe = document.getElementById('earth-wrap');
             const earthCanvas = document.getElementById('earth-canvas');
+            const exploreButton = document.getElementById('view-explore');
+            const resetViewButton = document.getElementById('view-reset');
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-            if (!stage || !globe || reduceMotion.matches) return;
+            if (!stage || !globe || !exploreButton || !resetViewButton || reduceMotion.matches) return;
 
             const initRealEarth = () => {
                 if (!earthCanvas || !window.THREE) return;
@@ -361,6 +391,7 @@
             let lastX = 0;
             let lastY = 0;
             let pinchDistance = 0;
+            let exploreView = false;
 
             const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
             const render = () => {
@@ -374,9 +405,32 @@
             };
             const distance = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 
+            const setExploreView = (active) => {
+                exploreView = active;
+                exploreButton.setAttribute('aria-pressed', String(active));
+                exploreButton.textContent = active ? 'Exit view' : 'Explore view';
+                stage.classList.toggle('earth-stage--explore', active);
+                if (active) stage.focus({ preventScroll: true });
+            };
+            const resetView = () => { rotationX = 0; rotationY = 0; zoom = 1; render(); };
+            exploreButton.addEventListener('click', () => setExploreView(!exploreView));
+            resetViewButton.addEventListener('click', () => { resetView(); setExploreView(false); });
+            stage.addEventListener('keydown', (event) => {
+                const step = event.shiftKey ? 12 : 5;
+                if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home'].includes(event.key)) return;
+                event.preventDefault();
+                if (event.key === 'Home') resetView();
+                if (event.key === 'ArrowLeft') rotationY -= step;
+                if (event.key === 'ArrowRight') rotationY += step;
+                if (event.key === 'ArrowUp') rotationX = clamp(rotationX - step, -34, 34);
+                if (event.key === 'ArrowDown') rotationX = clamp(rotationX + step, -34, 34);
+                render();
+            });
+
             globe.style.setProperty('--earth-scale', '1');
             stage.addEventListener('pointerdown', (event) => {
                 if (event.pointerType === 'mouse' && event.button !== 0) return;
+                if (!exploreView) setExploreView(true);
                 activePointer = event.pointerId;
                 dragging = true;
                 lastX = event.clientX;
@@ -427,12 +481,15 @@
             const dateOutput = document.getElementById('orbit-date-output');
             const calibrationOutput = document.getElementById('orbit-calibration-output');
             const offlineOutput = document.getElementById('orbit-offline-output');
+            const focusSelect = document.getElementById('body-focus');
+            const focusOutput = document.getElementById('focus-output');
             const speedSelect = document.getElementById('orbit-speed');
             const playButton = document.getElementById('orbit-play');
             const resetButton = document.getElementById('orbit-reset');
-            if (!stage || !dateInput || !dateOutput || !calibrationOutput || !offlineOutput || !speedSelect || !playButton || !resetButton) return;
+            if (!stage || !dateInput || !dateOutput || !calibrationOutput || !offlineOutput || !focusSelect || !focusOutput || !speedSelect || !playButton || !resetButton) return;
 
             const bodies = Object.fromEntries([...stage.querySelectorAll('.solar-body')].map((node) => [node.dataset.body, node]));
+            let focusedBody = focusSelect.value || 'Earth';
             const rad = Math.PI / 180;
             const dayMs = 86400000;
             const tenYearsMs = 10 * 365.2425 * dayMs;
@@ -485,10 +542,18 @@
             const setPosition = (name, vector, scale = 1) => {
                 const node = bodies[name];
                 if (!node) return;
-                const position = relativeScreenPosition(vector, scale);
+                const isFocused = focusedBody === name;
+                const focusScale = name === 'Jupiter' || name === 'Saturn' ? 2.55 : name === 'Sun' ? 2.15 : name === 'Moon' ? 3.4 : 2.8;
+                const position = isFocused ? { left: 50, top: 50, scale: focusScale } : relativeScreenPosition(vector, scale);
                 node.style.setProperty('--orbital-left', `${position.left.toFixed(2)}%`);
                 node.style.setProperty('--orbital-top', `${position.top.toFixed(2)}%`);
                 node.style.setProperty('--orbital-scale', position.scale.toFixed(3));
+                node.classList.toggle('solar-body--focused', isFocused);
+            };
+            const updateFocus = () => {
+                focusedBody = focusSelect.value || 'Earth';
+                stage.classList.toggle('earth-stage--focused-non-earth', focusedBody !== 'Earth');
+                focusOutput.textContent = `${focusedBody} centered`;
             };
             const formatOutput = (date) => date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const toInputValue = (date) => { const pad = (value) => String(value).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; };
@@ -528,7 +593,9 @@
                 lastFrame = now; requestAnimationFrame(animateTime);
             };
             applySpinProfiles();
+            updateFocus();
             dateInput.addEventListener('input', () => { simulatedDate = clampDate(readDate(), epoch); updateScene(); saveState(); });
+            focusSelect.addEventListener('change', () => { updateFocus(); updateScene(); });
             speedSelect.addEventListener('change', () => { updateScene(); saveState(); });
             playButton.addEventListener('click', () => { playing = !playing; playButton.textContent = playing ? 'Pause simulation' : 'Play simulation'; saveState(); });
             resetButton.addEventListener('click', () => { simulatedDate = epoch; playing = true; playButton.textContent = 'Pause simulation'; updateScene(); saveState(); });
@@ -550,6 +617,46 @@
     </script>
     <script>
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./offline.js').catch(() => {});
+    </script>
+    <script>
+        (() => {
+            const screen = document.getElementById('logo-screen');
+            const image = document.getElementById('logo-screen-image');
+            const smoke = document.getElementById('logo-smoke');
+            const restore = document.getElementById('logo-restore');
+            if (!screen || !image || !smoke || !restore) return;
+            const buildSmoke = () => {
+                smoke.replaceChildren();
+                for (let index = 0; index < 34; index += 1) {
+                    const particle = document.createElement('i');
+                    const angle = (Math.PI * 2 * index) / 34 + (index % 3) * .08;
+                    const distance = 70 + (index % 7) * 18;
+                    particle.style.setProperty('--smoke-x', `${Math.cos(angle) * distance}px`);
+                    particle.style.setProperty('--smoke-y', `${Math.sin(angle) * distance}px`);
+                    particle.style.setProperty('--smoke-scale', `${1.3 + (index % 5) * .35}`);
+                    particle.style.setProperty('--smoke-delay', `${(index % 6) * .025}s`);
+                    smoke.appendChild(particle);
+                }
+            };
+            let dissolved = false;
+            const dissolve = (event) => {
+                event?.stopPropagation();
+                if (dissolved) return;
+                dissolved = true;
+                buildSmoke();
+                screen.classList.add('is-dissolving');
+                window.setTimeout(() => screen.classList.add('is-hidden'), 1250);
+            };
+            image.addEventListener('pointerdown', dissolve);
+            image.addEventListener('click', dissolve);
+            restore.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dissolved = false;
+                screen.classList.remove('is-dissolving', 'is-hidden');
+                buildSmoke();
+            });
+            buildSmoke();
+        })();
     </script>
 </body>
 </html>

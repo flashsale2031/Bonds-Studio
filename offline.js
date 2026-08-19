@@ -1,8 +1,9 @@
-const CACHE_NAME = 'bonds-studio-offline-v1';
+const CACHE_NAME = 'bonds-studio-offline-v4';
 const APP_SHELL = [
   './',
   './index.html',
-  './assets/earth-blue-marble.png'
+  './assets/earth-blue-marble.png',
+  './assets/bonds-studio-screen-logo-transparent.png'
 ];
 
 self.addEventListener('install', (event) => {
