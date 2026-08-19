@@ -407,10 +407,18 @@
                 const inflateGeometry = (geometry, pressure = .024) => {
                     const position = geometry.attributes.position;
                     const vertex = new THREE.Vector3();
+                    const directions = [
+                        new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1),
+                        new THREE.Vector3(1, 1, 0).normalize(), new THREE.Vector3(1, -1, 0).normalize(),
+                        new THREE.Vector3(1, 0, 1).normalize(), new THREE.Vector3(1, 0, -1).normalize(),
+                        new THREE.Vector3(0, 1, 1).normalize(), new THREE.Vector3(0, 1, -1).normalize()
+                    ];
                     for (let i = 0; i < position.count; i += 1) {
                         vertex.fromBufferAttribute(position, i).normalize();
-                        const latitudePressure = 1 + pressure * (1 - Math.abs(vertex.y) * .35);
-                        vertex.multiplyScalar(latitudePressure);
+                        // Balanced pressure pairs: top-bottom, left-right, front-back, and all diagonal planes.
+                        const directionalSupport = directions.reduce((sum, direction) => sum + Math.abs(vertex.dot(direction)), 0) / directions.length;
+                        const balancedPressure = pressure * (.94 + directionalSupport * .06);
+                        vertex.multiplyScalar(1 + balancedPressure);
                         position.setXYZ(i, vertex.x, vertex.y, vertex.z);
                     }
                     position.needsUpdate = true;

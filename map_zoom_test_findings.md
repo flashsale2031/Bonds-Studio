@@ -34,3 +34,5 @@ Dual-sided Earth shader local test: the source contains front/back UV uniforms, 
 The HTTP-served dual-sided Earth shader test succeeded. The runtime shader is active with both `uFrontMap` and `uBackMap`, `uBlendPower = 1.65`, `THREE.DoubleSide`, and live `uTime` and `uAnimation` values. The Earth texture and shader render correctly over HTTP; the earlier file:// failure was only an origin-loading limitation.
 
 The continuous-sphere shader test succeeded over HTTP. The live shader has both front and back texture channels, `uSeamWidth = 0.92`, `uBlendPower = 1.65`, `THREE.DoubleSide`, active animation and time uniforms, and a vertex shader using the closed sphere model transform. The Earth visibly renders as one spherical mesh with the map channels wrapped from the same normal-derived spherical coordinates.
+
+Balanced extrusion test succeeded over HTTP. The Earth remains a smooth closed spherical mesh, the dual-map shader is active with seam width 0.92, the Earth controller is active, and animation/time uniforms continue updating. No shader or geometry errors appeared beyond the existing Three.js legacy-build warning.
