@@ -3,7 +3,11 @@ const APP_SHELL = [
   './',
   './index.html',
   './assets/earth-blue-marble.png',
-  './assets/bonds-studio-screen-logo-transparent.png'
+  './assets/bonds-studio-screen-logo-transparent.png',
+  './vendor/leaflet.js',
+  './vendor/leaflet.css',
+  './vendor/images/marker-icon.png',
+  './vendor/images/marker-shadow.png'
 ];
 
 self.addEventListener('install', (event) => {
