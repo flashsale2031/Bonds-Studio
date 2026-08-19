@@ -109,7 +109,13 @@
         .space-depth::after { opacity: .42; background: radial-gradient(ellipse at 50% 50%, transparent 0 34%, rgba(117,230,255,.08) 45%, transparent 61%), radial-gradient(ellipse at 32% 74%, rgba(181,160,255,.13), transparent 36%), radial-gradient(ellipse at 76% 22%, rgba(255,194,128,.08), transparent 30%); transform: rotate(-18deg) scale(1.4); }
         @keyframes star-drift { from { background-position: 11% 23%, 68% 31%, 35% 78%, 84% 76%, 57% 12%, 23% 57%; } to { background-position: 15% 20%, 64% 35%, 39% 75%, 80% 80%, 61% 9%, 19% 60%; } }
         .space-scene-label { position: absolute; top: 18px; left: 22px; z-index: 1; color: rgba(184,224,237,.65); font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; }
-        .orbit-controls { position: absolute; top: 42px; left: 22px; z-index: 7; display: grid; gap: 8px; width: min(228px, 42%); padding: 10px; border: 1px solid rgba(170,214,235,.16); border-radius: 12px; background: rgba(3,15,26,.72); box-shadow: 0 12px 32px rgba(0,0,0,.2); backdrop-filter: blur(12px); }
+        .orbit-controls { position: absolute; top: 42px; left: 22px; z-index: 7; display: grid; gap: 8px; width: min(228px, 42%); padding: 10px; border: 1px solid rgba(170,214,235,.16); border-radius: 12px; background: rgba(3,15,26,.72); box-shadow: 0 12px 32px rgba(0,0,0,.2); backdrop-filter: blur(12px); transition: opacity .2s var(--ease), transform .2s var(--ease); }
+        .orbit-controls.is-closed { opacity: 0; pointer-events: none; transform: translateY(-8px) scale(.96); }
+        .orbit-controls__close { position: absolute; top: 6px; right: 7px; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid rgba(117,230,255,.28); border-radius: 50%; color: var(--cyan); background: rgba(117,230,255,.08); font-size: 1rem; line-height: 1; cursor: pointer; }
+        .orbit-controls__close:hover, .orbit-controls__close:focus-visible { color: #06111b; background: var(--cyan); outline: none; }
+        .orbit-controls__open { position: absolute; top: 42px; left: 22px; z-index: 7; display: none; min-height: 32px; padding: 0 11px; border: 1px solid rgba(117,230,255,.32); border-radius: 999px; color: var(--cyan); background: rgba(3,15,26,.82); font-size: .64rem; cursor: pointer; }
+        .orbit-controls.is-closed + .orbit-controls__open { display: inline-flex; align-items: center; }
+        .orbit-controls__open:hover, .orbit-controls__open:focus-visible { color: #06111b; background: var(--cyan); outline: none; }
         .orbit-controls__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .62rem; }
         .orbit-controls output { display: block; color: var(--mint); font-variant-numeric: tabular-nums; }
         .orbit-controls input, .orbit-controls select { width: 100%; min-width: 0; padding: 6px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #0b2232; font-size: .64rem; }
@@ -253,8 +259,8 @@
                         <div class="logo-smoke" id="logo-smoke" aria-hidden="true"></div>
                         <button class="logo-restore" id="logo-restore" type="button">Restore screen</button>
                     </div>
-                    <div class="orbit-controls" aria-label="Orbital time and view controls">
-                        <div class="orbit-controls__row"><span>Simulation time</span><output id="orbit-date-output">Now</output></div>
+                    <div class="orbit-controls" id="orbit-controls" aria-label="Orbital time and view controls">
+                        <div class="orbit-controls__row"><span>Simulation time</span><output id="orbit-date-output">Now</output><button class="orbit-controls__close" id="orbit-controls-close" type="button" aria-label="Close simulated time menu" title="Close simulated time menu">×</button></div>
                         <input id="orbit-date" type="datetime-local" aria-label="Set simulation date and time" />
                         <div class="orbit-controls__row"><span>Playback</span><select id="orbit-speed" aria-label="Choose orbital playback speed"><option value="1">1 day / second</option><option value="7">7 days / second</option><option value="30">30 days / second</option><option value="365">1 year / second</option></select></div>
                         <label class="orbit-focus-label" for="body-focus">Center object</label>
@@ -268,6 +274,7 @@
                         <output id="orbit-calibration-output">Calibrated: prograde / Keplerian</output>
                         <output id="orbit-offline-output">Offline timeline ready</output>
                     </div>
+                    <button class="orbit-controls__open" id="orbit-controls-open" type="button" aria-expanded="true">Open simulated time</button>
                     <p class="geocentric-note">Earth-centered display: the Moon orbits Earth; the Sun and planets are shown in apparent relative positions.</p>
                     <span class="planet planet--sun solar-body" data-body="Sun" aria-hidden="true"><span class="solar-body-label">Sun</span></span>
                     <span class="planet planet--moon solar-body" data-body="Moon" aria-hidden="true"><span class="solar-body-label">Moon</span></span>
@@ -333,6 +340,9 @@
             const earthCanvas = document.getElementById('earth-canvas');
             const exploreButton = document.getElementById('view-explore');
             const resetViewButton = document.getElementById('view-reset');
+            const orbitControls = document.getElementById('orbit-controls');
+            const orbitControlsClose = document.getElementById('orbit-controls-close');
+            const orbitControlsOpen = document.getElementById('orbit-controls-open');
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
             if (!stage || !globe || !exploreButton || !resetViewButton || reduceMotion.matches) return;
 
@@ -501,6 +511,14 @@
             const resetView = () => { rotationX = 0; rotationY = 0; zoom = 1; render(); };
             exploreButton.addEventListener('click', () => setExploreView(!exploreView));
             resetViewButton.addEventListener('click', () => { resetView(); setExploreView(false); });
+            const setOrbitControlsOpen = (open) => {
+                orbitControls?.classList.toggle('is-closed', !open);
+                orbitControlsOpen?.setAttribute('aria-expanded', String(open));
+                if (open) orbitControlsClose?.focus({ preventScroll: true });
+                else orbitControlsOpen?.focus({ preventScroll: true });
+            };
+            orbitControlsClose?.addEventListener('click', () => setOrbitControlsOpen(false));
+            orbitControlsOpen?.addEventListener('click', () => setOrbitControlsOpen(true));
             stage.addEventListener('keydown', (event) => {
                 const step = event.shiftKey ? 12 : 5;
                 if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home'].includes(event.key)) return;
@@ -526,6 +544,7 @@
             };
             stage.addEventListener('pointerdown', (event) => {
                 if (event.pointerType === 'mouse' && event.button !== 0) return;
+                if (event.target.closest?.('button, input, select, a, label')) return;
                 if (event.pointerType !== 'mouse') event.preventDefault();
                 if (!exploreView) setExploreView(true);
                 activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
