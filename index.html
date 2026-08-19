@@ -421,10 +421,67 @@
                 loader.load('assets/earth-blue-marble.png', (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    const backTexture = texture.clone();
+                    backTexture.colorSpace = THREE.SRGBColorSpace;
+                    backTexture.wrapS = THREE.RepeatWrapping;
+                    backTexture.repeat.set(-1, 1);
+                    backTexture.offset.x = 1;
+                    backTexture.needsUpdate = true;
                     const earthGeometry = inflateGeometry(new THREE.SphereGeometry(1, 96, 64), .026);
-                    const mesh = new THREE.Mesh(earthGeometry, new THREE.MeshPhongMaterial({ map: texture, color: 0x8fc9ed, shininess: 18, specular: new THREE.Color(0x153d54), emissive: new THREE.Color(0x061522), emissiveIntensity: .18 }));
+                    const earthUniforms = {
+                        uFrontMap: { value: texture },
+                        uBackMap: { value: backTexture },
+                        uBlendPower: { value: 1.65 },
+                        uTime: { value: 0 },
+                        uAnimation: { value: 0 },
+                        uLightDirection: { value: new THREE.Vector3(-.55, .4, 1).normalize() }
+                    };
+                    const earthMaterial = new THREE.ShaderMaterial({
+                        uniforms: earthUniforms,
+                        side: THREE.DoubleSide,
+                        vertexShader: `
+                            varying vec2 vUv;
+                            varying vec3 vWorldNormal;
+                            varying vec3 vWorldPosition;
+                            void main() {
+                                vUv = uv;
+                                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                                vWorldPosition = worldPosition.xyz;
+                                vWorldNormal = normalize(mat3(modelMatrix) * normal);
+                                gl_Position = projectionMatrix * viewMatrix * worldPosition;
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform sampler2D uFrontMap;
+                            uniform sampler2D uBackMap;
+                            uniform float uBlendPower;
+                            uniform float uTime;
+                            uniform float uAnimation;
+                            uniform vec3 uLightDirection;
+                            varying vec2 vUv;
+                            varying vec3 vWorldNormal;
+                            varying vec3 vWorldPosition;
+                            void main() {
+                                vec3 normal = normalize(vWorldNormal);
+                                vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+                                float facing = abs(dot(normal, viewDirection));
+                                float normalMask = pow(clamp(1.0 - facing, 0.0, 1.0), uBlendPower);
+                                vec2 backUv = vec2(1.0 - vUv.x, vUv.y);
+                                vec4 frontColor = texture2D(uFrontMap, vUv);
+                                vec4 backColor = texture2D(uBackMap, backUv);
+                                vec4 blendedColor = mix(frontColor, backColor, normalMask * .86);
+                                if (!gl_FrontFacing) blendedColor = mix(backColor, frontColor, normalMask * .32);
+                                float light = .42 + .72 * max(dot(normal, normalize(uLightDirection)), 0.0);
+                                float animationPulse = .985 + .015 * sin(uTime * .7 + uAnimation);
+                                vec3 finalColor = blendedColor.rgb * light * animationPulse;
+                                gl_FragColor = vec4(finalColor, blendedColor.a);
+                            }
+                        `
+                    });
+                    const mesh = new THREE.Mesh(earthGeometry, earthMaterial);
                     mesh.castShadow = true; mesh.receiveShadow = true;
                     globe3d.add(mesh);
+                    window.bondsEarthShader = { material: earthMaterial, uniforms: earthUniforms };
                     const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.012, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
                     globe3d.add(depthShell);
                     const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.045, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
@@ -470,7 +527,7 @@
                     return sprite;
                 }
                 const resize = () => { const size = earthCanvas.clientWidth || 320; renderer.setSize(size, size, false); camera.aspect = 1; camera.updateProjectionMatrix(); };
-                const animate = () => { requestAnimationFrame(animate); globe3d.rotation.y += .0007; Object.values(solarMeshes).forEach((body) => { body.rotation.y += .0018; body.rotation.x += .00035; }); renderer.render(scene, camera); };
+                const animate = () => { requestAnimationFrame(animate); globe3d.rotation.y += .0007; if (window.bondsEarthShader) { const shader = window.bondsEarthShader.uniforms; shader.uTime.value = performance.now() * .001; shader.uAnimation.value = globe3d.rotation.y; } Object.values(solarMeshes).forEach((body) => { body.rotation.y += .0018; body.rotation.x += .00035; }); renderer.render(scene, camera); };
                 new ResizeObserver(resize).observe(earthCanvas);
                 resize(); animate();
             };
@@ -495,6 +552,7 @@
                     globe.style.setProperty('--earth-scale', (zoom * verticalScale).toFixed(3));
                     window.bondsEarth3d?.view(rotationY, rotationX);
                     window.bondsSolar3d?.view(rotationY, rotationX);
+                    if (window.bondsEarthShader) { window.bondsEarthShader.uniforms.uAnimation.value = rotationY * Math.PI / 180 + rotationX * .015; }
                     window.bondsLocalMap?.setZoom(zoom);
                     frame = 0;
                 });
