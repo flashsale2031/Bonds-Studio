@@ -3,50 +3,553 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bonds Studio</title>
+    <meta name="theme-color" content="#07131f" />
+    <meta name="description" content="Bonds Studio — creative systems for ideas in motion." />
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js" defer></script>
+    <title>Bonds Studio — Ideas in Motion</title>
     <style>
-        body, html {
+        :root {
+            color-scheme: dark;
+            --ink: #f5fbff;
+            --muted: #9fb3c3;
+            --line: rgba(170, 214, 235, .18);
+            --panel: rgba(9, 24, 37, .68);
+            --cyan: #75e6ff;
+            --mint: #a7f3d0;
+            --violet: #b5a0ff;
+            --night: #06111b;
+            --ease: cubic-bezier(.23, 1, .32, 1);
+        }
+
+        * { box-sizing: border-box; }
+        html { min-width: 320px; background: var(--night); }
+        body {
+            min-height: 100vh;
             margin: 0;
-            padding: 0;
-            height: 100%;
+            overflow-x: hidden;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 15% 15%, rgba(117, 230, 255, .11), transparent 27rem),
+                radial-gradient(circle at 85% 10%, rgba(181, 160, 255, .11), transparent 30rem),
+                linear-gradient(135deg, #06111b 0%, #081c2a 48%, #07101a 100%);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body::before {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            content: "";
+            opacity: .28;
+            background-image: linear-gradient(rgba(173, 220, 236, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(173, 220, 236, .05) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(to bottom, black, transparent 76%);
+        }
+
+        a { color: inherit; }
+        button { font: inherit; }
+        .site-shell { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
+
+        .topbar {
             display: flex;
-            flex-direction: column;
-            font-family: Arial, sans-serif;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            min-height: 78px;
+            border-bottom: 1px solid var(--line);
         }
-        header {
-            background-color: #222;
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            font-size: 2rem;
-            flex-shrink: 0;
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--ink);
+            text-decoration: none;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            font-size: .78rem;
+            font-weight: 800;
         }
-        main {
-            flex-grow: 1;
-            position: relative;
-            overflow: hidden;
+        .brand-mark {
+            display: grid;
+            width: 31px;
+            height: 31px;
+            place-items: center;
+            border: 1px solid rgba(117, 230, 255, .7);
+            border-radius: 50%;
+            color: var(--cyan);
+            box-shadow: 0 0 22px rgba(117, 230, 255, .24);
         }
-        main img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+        .topnav { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: .78rem; }
+        .topnav a { text-decoration: none; transition: color .18s var(--ease); }
+        .topnav a:hover, .topnav a:focus-visible { color: var(--cyan); }
+        .status { display: inline-flex; align-items: center; gap: 8px; color: var(--mint); font-size: .72rem; letter-spacing: .04em; }
+        .status::before { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); content: ""; }
+
+        .hero { display: block; min-height: 720px; padding: 24px 0 54px; }
+        .hero-copy { position: relative; z-index: 2; }
+        .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 22px; color: var(--cyan); font-size: .7rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
+        .eyebrow::before { width: 34px; height: 1px; background: var(--cyan); content: ""; }
+        h1 { max-width: 720px; margin: 0; font-size: clamp(3.4rem, 8vw, 7.8rem); font-weight: 300; letter-spacing: -.08em; line-height: .86; }
+        h1 strong { display: block; color: transparent; background: linear-gradient(100deg, var(--cyan), var(--mint) 48%, var(--violet)); -webkit-background-clip: text; background-clip: text; font-weight: 700; }
+        .hero-lede { max-width: 480px; margin: 30px 0 0; color: var(--muted); font-size: clamp(1rem, 1.7vw, 1.18rem); line-height: 1.7; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+        .button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: rgba(255,255,255,.04); text-decoration: none; cursor: pointer; transition: transform .16s var(--ease), border-color .16s ease, background .16s ease; }
+        .button:hover, .button:focus-visible { transform: translateY(-2px); border-color: rgba(117,230,255,.7); background: rgba(117,230,255,.1); outline: none; }
+        .button:active { transform: scale(.97); }
+        .button--primary { border-color: transparent; color: #06111b; background: var(--cyan); font-weight: 800; }
+        .button--primary:hover, .button--primary:focus-visible { border-color: transparent; background: #b7f3ff; }
+
+        .earth-stage { position: relative; width: 100%; min-height: 720px; overflow: visible; perspective: 1400px; isolation: isolate; }
+        .space-depth { position: absolute; inset: -7% -12%; z-index: -2; overflow: hidden; border: 1px solid rgba(170,214,235,.12); border-radius: 32px; background: radial-gradient(circle at 54% 46%, rgba(20,90,130,.16), transparent 31%), radial-gradient(circle at 23% 78%, rgba(100,66,160,.14), transparent 24%), linear-gradient(145deg, rgba(3,12,22,.84), rgba(5,20,36,.5)); box-shadow: inset 0 0 90px rgba(0,0,0,.36), 0 24px 80px rgba(0,0,0,.18); }
+        .space-depth::before, .space-depth::after { position: absolute; inset: 0; content: ""; pointer-events: none; }
+        .space-depth::before { opacity: .78; background-image: radial-gradient(circle, rgba(255,255,255,.95) 0 1px, transparent 1.7px), radial-gradient(circle, rgba(255,255,255,.78) 0 .7px, transparent 1.35px), radial-gradient(circle, rgba(117,230,255,.82) 0 1px, transparent 1.6px), radial-gradient(circle, rgba(181,160,255,.82) 0 .8px, transparent 1.55px), radial-gradient(circle, rgba(255,226,160,.7) 0 .8px, transparent 1.5px), radial-gradient(circle, rgba(255,255,255,.52) 0 .55px, transparent 1.15px); background-position: 11% 23%, 68% 31%, 35% 78%, 84% 76%, 57% 12%, 23% 57%; background-size: 137px 113px, 181px 157px, 229px 191px, 277px 239px, 319px 283px, 97px 89px; animation: star-drift 38s linear infinite; }
+        .space-depth::after { opacity: .42; background: radial-gradient(ellipse at 50% 50%, transparent 0 34%, rgba(117,230,255,.08) 45%, transparent 61%), radial-gradient(ellipse at 32% 74%, rgba(181,160,255,.13), transparent 36%), radial-gradient(ellipse at 76% 22%, rgba(255,194,128,.08), transparent 30%); transform: rotate(-18deg) scale(1.4); }
+        @keyframes star-drift { from { background-position: 11% 23%, 68% 31%, 35% 78%, 84% 76%, 57% 12%, 23% 57%; } to { background-position: 15% 20%, 64% 35%, 39% 75%, 80% 80%, 61% 9%, 19% 60%; } }
+        .space-scene-label { position: absolute; top: 18px; left: 22px; z-index: 1; color: rgba(184,224,237,.65); font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; }
+        .orbit-controls { position: absolute; top: 42px; left: 22px; z-index: 7; display: grid; gap: 8px; width: min(228px, 42%); padding: 10px; border: 1px solid rgba(170,214,235,.16); border-radius: 12px; background: rgba(3,15,26,.72); box-shadow: 0 12px 32px rgba(0,0,0,.2); backdrop-filter: blur(12px); }
+        .orbit-controls__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .62rem; }
+        .orbit-controls output { display: block; color: var(--mint); font-variant-numeric: tabular-nums; }
+        .orbit-controls input, .orbit-controls select { width: 100%; min-width: 0; padding: 6px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #0b2232; font-size: .64rem; }
+        .orbit-controls button { padding: 6px 8px; border: 1px solid rgba(117,230,255,.32); border-radius: 7px; color: var(--cyan); background: rgba(117,230,255,.08); font-size: .64rem; cursor: pointer; }
+        .orbit-controls button:hover, .orbit-controls button:focus-visible { background: rgba(117,230,255,.18); outline: none; }
+        .solar-body { left: var(--orbital-left, 50%) !important; top: var(--orbital-top, 50%) !important; right: auto !important; bottom: auto !important; z-index: 2; transform: translate(-50%, -50%) scale(var(--orbital-scale, 1)); }
+        .solar-body-label { position: absolute; top: calc(100% + 5px); left: 50%; color: rgba(217,251,255,.82); font-size: .55rem; font-weight: 700; letter-spacing: .07em; text-shadow: 0 1px 8px #020a12; text-transform: uppercase; transform: translateX(-50%); white-space: nowrap; }
+        .geocentric-note { position: absolute; right: 22px; top: 18px; z-index: 1; max-width: 210px; color: rgba(184,224,237,.58); font-size: .58rem; line-height: 1.4; text-align: right; }
+        .planet { position: absolute; z-index: -1; display: block; border-radius: 50%; pointer-events: none; transform-style: preserve-3d; box-shadow: inset -16px -13px 22px rgba(0,0,0,.48), inset 7px 7px 12px rgba(255,255,255,.22), 0 0 32px rgba(255,255,255,.08); animation: planet-spin var(--spin-duration, 18s) linear infinite var(--spin-direction, normal), planet-drift var(--drift-duration, 12s) ease-in-out infinite; }
+        .planet::after { position: absolute; inset: 16%; border-radius: 50%; opacity: .5; content: ""; background: repeating-linear-gradient(8deg, transparent 0 7px, rgba(255,255,255,.18) 8px 10px, transparent 11px 18px); filter: blur(1px); }
+        .planet--sun { --spin-duration: 27s; --drift-duration: 13s; top: 7%; left: 7%; width: clamp(54px, 9vw, 96px); aspect-ratio: 1; background: radial-gradient(circle at 35% 30%, #fffbd0 0 9%, #ffd56b 28%, #f58c32 62%, #a83238 100%); box-shadow: 0 0 18px #ffd56b, 0 0 58px rgba(255,151,54,.64), inset -12px -10px 18px rgba(127,35,42,.4); }
+        .planet--sun::after { opacity: .38; background: repeating-linear-gradient(-18deg, transparent 0 8px, rgba(255,242,154,.32) 9px 11px, transparent 12px 19px); }
+        .planet--moon { --spin-duration: 15s; --drift-duration: 9s; top: 20%; right: 7%; width: clamp(30px, 5vw, 58px); aspect-ratio: 1; background: radial-gradient(circle at 33% 26%, #fff 0 8%, #cbd8e2 36%, #687687 75%, #263342 100%); box-shadow: 0 0 18px rgba(225,241,255,.32), inset -10px -8px 15px rgba(0,0,0,.4); }
+        .planet--mars { --spin-duration: 12.3s; --drift-duration: 12s; bottom: 24%; left: 7%; width: clamp(42px, 7vw, 78px); aspect-ratio: 1; background: radial-gradient(circle at 31% 26%, #f2b58b, #a94635 54%, #461e2a 100%); }
+        .planet--saturn { --spin-duration: 5.4s; --drift-duration: 15s; right: 4%; bottom: 11%; width: clamp(70px, 12vw, 130px); aspect-ratio: 1; background: radial-gradient(circle at 32% 27%, #fff0b4, #bd8752 60%, #4c3444 100%); }
+        .planet--saturn::before { position: absolute; top: 40%; left: -25%; width: 150%; height: 22%; border: 7px solid rgba(232,197,146,.42); border-top-color: rgba(255,230,182,.8); border-bottom-color: rgba(122,89,117,.54); border-radius: 50%; content: ""; transform: rotate(-18deg); }
+        .planet--blue { --spin-duration: 8.1s; --drift-duration: 10s; right: 23%; top: 4%; width: clamp(23px, 4vw, 44px); aspect-ratio: 1; background: radial-gradient(circle at 30% 25%, #c3f9ff, #4ba7cf 50%, #142b62 100%); }
+        .planet--mercury { --spin-duration: 4s; width: 18px; aspect-ratio: 1; background: radial-gradient(circle at 30% 25%, #e6d5b9, #8f786d 60%, #302a3f 100%); }
+        .planet--venus { --spin-duration: 7s; width: 25px; aspect-ratio: 1; background: radial-gradient(circle at 30% 25%, #fff1b6, #c28b48 58%, #573541 100%); }
+        .planet--jupiter { --spin-duration: 3.4s; width: 58px; aspect-ratio: 1; background: radial-gradient(circle at 31% 25%, #f5dfb7, #ae7654 55%, #4c3140 100%); }
+        .planet--uranus { --spin-duration: 6.5s; width: 31px; aspect-ratio: 1; background: radial-gradient(circle at 31% 25%, #d4ffff, #68b7c2 58%, #213a62 100%); }
+        .earth-stage::before, .earth-stage::after { position: absolute; border: 1px solid rgba(117, 230, 255, .14); border-radius: 50%; content: ""; pointer-events: none; }
+        .earth-stage::before { inset: 9% 10%; transform: rotate(-18deg) rotateX(64deg); box-shadow: 0 0 46px rgba(117,230,255,.08); }
+        .earth-stage::after { inset: 20% 1%; transform: rotate(72deg) rotateY(68deg); border-color: rgba(181, 160, 255, .12); }
+        .earth-orbit { position: absolute; inset: 7% 4%; animation: orbit-spin 18s linear infinite; transform-style: preserve-3d; }
+        .earth-orbit::before, .earth-orbit::after { position: absolute; width: 6px; height: 6px; border-radius: 50%; content: ""; box-shadow: 0 0 18px currentColor; }
+        .earth-orbit::before { top: 10%; left: 14%; color: var(--mint); background: currentColor; }
+        .earth-orbit::after { right: 8%; bottom: 20%; color: var(--violet); background: currentColor; }
+        .earth-wrap { position: absolute; top: 50%; left: 50%; width: clamp(260px, 34vw, 430px); aspect-ratio: 1; transform: translate(-50%, -50%) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--earth-scale, 1)); transform-style: preserve-3d; transition: transform .2s var(--ease); touch-action: none; cursor: grab; }
+        .earth-stage--dragging .earth-wrap { cursor: grabbing; transition: none; }
+        .earth { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; background: #082b4e url('assets/earth-blue-marble.png') center / cover no-repeat; box-shadow: inset -34px -22px 54px rgba(0,0,0,.65), inset 16px 10px 28px rgba(255,255,255,.22), 0 0 0 9px rgba(117,230,255,.04), 0 0 70px rgba(70,210,255,.34), 0 0 140px rgba(181,160,255,.18); transform: translateZ(16px); }
+        .earth::before { position: absolute; inset: 0; z-index: 2; border-radius: 50%; content: ""; background: linear-gradient(118deg, transparent 35%, rgba(255,255,255,.18) 46%, transparent 53%); mix-blend-mode: screen; pointer-events: none; }
+        .earth::after { position: absolute; inset: 0; z-index: 3; border-radius: 50%; content: ""; box-shadow: inset -30px -12px 38px rgba(0,0,0,.42); pointer-events: none; }
+        #earth-canvas { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; border-radius: 50%; }
+        .earth-label { position: absolute; left: 50%; bottom: -48px; transform: translateX(-50%); color: var(--muted); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; white-space: nowrap; }
+        .module-card { position: absolute; z-index: 3; display: grid; gap: 5px; min-width: 142px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 20px 50px rgba(0,0,0,.24); backdrop-filter: blur(16px); }
+        .module-card small { color: var(--muted); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+        .module-card strong { color: var(--ink); font-size: 1rem; font-weight: 700; }
+        .module-card--signal { top: 13%; left: 2%; }
+        .module-card--orbit { right: 1%; bottom: 20%; }
+        .module-card--studio { right: 17%; top: 3%; }
+        .module-card--signal strong { color: var(--mint); }
+        .module-card--orbit strong { color: var(--cyan); }
+        .module-card--studio strong { color: var(--violet); }
+        .street-explorer { position: absolute; left: 50%; bottom: -10px; z-index: 5; display: flex; align-items: center; gap: 10px; width: min(94%, 380px); padding: 10px; border: 1px solid rgba(117,230,255,.25); border-radius: 14px; background: rgba(4,17,28,.84); box-shadow: 0 18px 40px rgba(0,0,0,.24); backdrop-filter: blur(16px); transform: translateX(-50%); }
+        .street-explorer select { min-width: 0; flex: 1; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #0b2232; font-size: .75rem; }
+        .street-explorer select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+        .street-explorer a { flex: 0 0 auto; padding: 9px 11px; border-radius: 9px; color: #06111b; background: var(--cyan); font-size: .72rem; font-weight: 800; text-decoration: none; white-space: nowrap; }
+        .street-explorer a:hover, .street-explorer a:focus-visible { background: #c0f5ff; outline: none; }
+        .street-explorer-label { position: absolute; left: 12px; top: -17px; color: var(--cyan); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; }
+
+        .system-grid { display: grid; grid-template-columns: 1.15fr .85fr .85fr; gap: 14px; padding: 0 0 74px; }
+        .system-panel { min-height: 152px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); }
+        .system-panel h2, .system-panel h3 { margin: 0; font-size: 1rem; font-weight: 650; }
+        .system-panel p { margin: 12px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.55; }
+        .system-panel--wide { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(117,230,255,.12), rgba(255,255,255,.025)); }
+        .panel-kicker { margin: 0 0 10px; color: var(--cyan); font-size: .66rem; letter-spacing: .17em; text-transform: uppercase; }
+        .metric { color: var(--mint); font-size: 2rem; font-weight: 300; letter-spacing: -.06em; }
+        .metric-label { color: var(--muted); font-size: .72rem; }
+        .footer { display: flex; justify-content: space-between; gap: 18px; padding: 24px 0 30px; border-top: 1px solid var(--line); color: var(--muted); font-size: .74rem; }
+
+        @keyframes orbit-spin { to { transform: rotate(360deg); } }
+        @keyframes continent-drift { to { transform: rotate(-15deg) translateX(12%); } }
+        @keyframes planet-spin { from { rotate: 0deg; } to { rotate: 360deg; } }
+        @keyframes planet-drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+        @media (max-width: 860px) {
+            .hero { min-height: 580px; padding-top: 12px; }
+            .earth-stage { min-height: 580px; }
+            .system-grid { grid-template-columns: 1fr 1fr; }
+            .system-panel--wide { grid-column: 1 / -1; }
         }
-        footer {
-            background-color: #222;
-            color: white;
-            text-align: center;
-            padding: 0.75rem;
-            flex-shrink: 0;
-            font-size: 1rem;
+        @media (max-width: 560px) {
+            .street-explorer { bottom: -30px; width: 96%; }
+            .street-explorer a { padding-inline: 8px; font-size: .65rem; }
+            .site-shell { width: min(100% - 28px, 1240px); }
+            .topbar { min-height: 68px; }
+            .topnav a:not(:last-child) { display: none; }
+            .status { display: none; }
+            .hero { min-height: 500px; padding: 8px 0 34px; }
+            h1 { font-size: clamp(3.2rem, 18vw, 5.5rem); }
+            .earth-stage { min-height: 500px; }
+            .space-depth { inset: -4% -3%; border-radius: 24px; }
+            .space-scene-label { top: 12px; left: 14px; font-size: .54rem; }
+            .orbit-controls { top: 36px; left: 14px; width: 188px; }
+            .geocentric-note { right: 14px; top: 12px; max-width: 132px; font-size: .5rem; }
+            .solar-body-label { font-size: .46rem; }
+            .earth-wrap { width: min(76vw, 330px); }
+            .module-card { min-width: 116px; padding: 10px; }
+            .module-card--signal { left: -2%; }
+            .module-card--studio { right: -2%; }
+            .module-card--orbit { right: 0; bottom: 13%; }
+            .system-grid { grid-template-columns: 1fr; }
+            .system-panel--wide { grid-column: auto; }
+            .footer { flex-direction: column; }
         }
     </style>
 </head>
 <body>
-    <header>Bonds Studio</header>
-    <main>
-        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1350&q=80" alt="Code Image" />
-    </main>
-    <footer>Bonds Studio © 2027. All Rights Reserved</footer>
+    <div class="site-shell">
+        <header class="topbar">
+            <a class="brand" href="index.html" aria-label="Bonds Studio home"><span class="brand-mark">B</span><span>Bonds Studio</span></a>
+            <nav class="topnav" aria-label="Primary navigation">
+                <a href="#systems">Systems</a>
+                <a href="#signal">Signal</a>
+                <span class="status">Studio online</span>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero" aria-label="Bonds Studio Earth system">
+                <div class="earth-stage" id="signal" aria-label="Interactive Earth system visualization">
+                    <div class="space-depth" aria-hidden="true"><span class="space-scene-label">Orbital field / Earth system</span></div>
+                    <div class="orbit-controls" aria-label="Orbital time controls">
+                        <div class="orbit-controls__row"><span>Simulation time</span><output id="orbit-date-output">Now</output></div>
+                        <input id="orbit-date" type="datetime-local" aria-label="Set simulation date and time" />
+                        <div class="orbit-controls__row"><span>Playback</span><select id="orbit-speed" aria-label="Choose orbital playback speed"><option value="1">1 day / second</option><option value="7">7 days / second</option><option value="30">30 days / second</option><option value="365">1 year / second</option></select></div>
+                        <button id="orbit-play" type="button">Pause simulation</button>
+                        <button id="orbit-reset" type="button">Reset 10-year process</button>
+                        <output id="orbit-calibration-output">Calibrated: prograde / Keplerian</output>
+                        <output id="orbit-offline-output">Offline timeline ready</output>
+                    </div>
+                    <p class="geocentric-note">Earth-centered display: the Moon orbits Earth; the Sun and planets are shown in apparent relative positions.</p>
+                    <span class="planet planet--sun solar-body" data-body="Sun" aria-hidden="true"><span class="solar-body-label">Sun</span></span>
+                    <span class="planet planet--moon solar-body" data-body="Moon" aria-hidden="true"><span class="solar-body-label">Moon</span></span>
+                    <span class="planet planet--mercury solar-body" data-body="Mercury" aria-hidden="true"><span class="solar-body-label">Mercury</span></span>
+                    <span class="planet planet--venus solar-body" data-body="Venus" aria-hidden="true"><span class="solar-body-label">Venus</span></span>
+                    <span class="planet planet--mars solar-body" data-body="Mars" aria-hidden="true"><span class="solar-body-label">Mars</span></span>
+                    <span class="planet planet--jupiter solar-body" data-body="Jupiter" aria-hidden="true"><span class="solar-body-label">Jupiter</span></span>
+                    <span class="planet planet--saturn solar-body" data-body="Saturn" aria-hidden="true"><span class="solar-body-label">Saturn</span></span>
+                    <span class="planet planet--uranus solar-body" data-body="Uranus" aria-hidden="true"><span class="solar-body-label">Uranus</span></span>
+                    <span class="planet planet--blue solar-body" data-body="Neptune" aria-hidden="true"><span class="solar-body-label">Neptune</span></span>
+                    <div class="earth-orbit" aria-hidden="true"></div>
+                    <div class="earth-wrap" id="earth-wrap">
+                        <div class="earth" role="img" aria-label="Interactive geographic Earth map with real locations"><canvas id="earth-canvas" aria-label="Earth map with labeled geographic locations"></canvas></div>
+                        <span class="earth-label">One connected studio</span>
+                    </div>
+                    <div class="module-card module-card--signal"><small>Current signal</small><strong>Curiosity</strong></div>
+                    <div class="module-card module-card--orbit"><small>In motion</small><strong>∞ ideas</strong></div>
+                    <div class="module-card module-card--studio"><small>Mode</small><strong>Making</strong></div>
+                    <div class="street-explorer" aria-label="Street-level location explorer">
+                        <span class="street-explorer-label">Country map → street level</span>
+                        <select id="street-location-select" aria-label="Choose a location to explore at street level">
+                            <option value="40.7128,-74.0060,New York,United States">New York, United States</option>
+                            <option value="51.5074,-0.1278,London,United Kingdom">London, United Kingdom</option>
+                            <option value="48.8566,2.3522,Paris,France">Paris, France</option>
+                            <option value="30.0444,31.2357,Cairo,Egypt">Cairo, Egypt</option>
+                            <option value="-1.2921,36.8219,Nairobi,Kenya">Nairobi, Kenya</option>
+                            <option value="25.2048,55.2708,Dubai,United Arab Emirates">Dubai, United Arab Emirates</option>
+                            <option value="19.0760,72.8777,Mumbai,India">Mumbai, India</option>
+                            <option value="35.6762,139.6503,Tokyo,Japan">Tokyo, Japan</option>
+                            <option value="1.3521,103.8198,Singapore,Singapore">Singapore</option>
+                            <option value="-33.8688,151.2093,Sydney,Australia">Sydney, Australia</option>
+                            <option value="-23.5505,-46.6333,São Paulo,Brazil">São Paulo, Brazil</option>
+                            <option value="19.4326,-99.1332,Mexico City,Mexico">Mexico City, Mexico</option>
+                        </select>
+                        <a id="street-view-link" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=40.7128,-74.0060" target="_blank" rel="noopener noreferrer">Street View ↗</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="system-grid" id="systems" aria-label="Bonds Studio systems">
+                <article class="system-panel system-panel--wide">
+                    <div><p class="panel-kicker">The studio loop</p><h2>Observe → shape → release.</h2><p>Every project is a small world: mapped carefully, built with intent, and launched with room to evolve.</p></div>
+                    <div><div class="metric">03</div><div class="metric-label">phases in every orbit</div></div>
+                </article>
+                <article class="system-panel"><p class="panel-kicker">01 / Observe</p><h3>Find the signal</h3><p>We look for the human insight hiding inside the brief.</p></article>
+                <article class="system-panel"><p class="panel-kicker">02 / Shape</p><h3>Make it tangible</h3><p>Strategy becomes a system people can understand and use.</p></article>
+                <article class="system-panel"><p class="panel-kicker">03 / Release</p><h3>Send it outward</h3><p>We ship polished foundations built to keep moving.</p></article>
+            </section>
+        </main>
+
+        <footer class="footer"><span>Bonds Studio © 2027</span><span>Independent creative systems for connected worlds.</span></footer>
+    </div>
+
+    <script>
+        (() => {
+            const stage = document.querySelector('.earth-stage');
+            const globe = document.getElementById('earth-wrap');
+            const earthCanvas = document.getElementById('earth-canvas');
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            if (!stage || !globe || reduceMotion.matches) return;
+
+            const initRealEarth = () => {
+                if (!earthCanvas || !window.THREE) return;
+                const THREE = window.THREE;
+                const renderer = new THREE.WebGLRenderer({ canvas: earthCanvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
+                camera.position.z = 3.15;
+                const globe3d = new THREE.Group();
+                scene.add(globe3d);
+                const loader = new THREE.TextureLoader();
+                loader.load('assets/earth-blue-marble.png', (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshPhongMaterial({ map: texture, shininess: 8, specular: new THREE.Color(0x153d54) }));
+                    globe3d.add(mesh);
+                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.025, 48, 32), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .12, side: THREE.BackSide }));
+                    globe3d.add(atmosphere);
+                    addLocationLabels(THREE, globe3d);
+                });
+                scene.add(new THREE.AmbientLight(0x8edfff, 1.35));
+                const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+                keyLight.position.set(-3, 2, 4);
+                scene.add(keyLight);
+
+                const locations = [
+                    ['New York', 40.71, -74.01], ['São Paulo', -23.55, -46.63], ['London', 51.51, -0.13], ['Cairo', 30.04, 31.24], ['Lagos', 6.52, 3.38], ['Cape Town', -33.92, 18.42], ['Dubai', 25.20, 55.27], ['Mumbai', 19.08, 72.88], ['Tokyo', 35.68, 139.65], ['Singapore', 1.35, 103.82], ['Sydney', -33.87, 151.21], ['Mexico City', 19.43, -99.13], ['Los Angeles', 34.05, -118.24], ['Paris', 48.86, 2.35], ['Nairobi', -1.29, 36.82], ['Reykjavík', 64.15, -21.94]
+                ];
+                function addLocationLabels(T, group) {
+                    locations.forEach(([name, lat, lon]) => {
+                        const marker = new T.Mesh(new T.SphereGeometry(.018, 8, 8), new T.MeshBasicMaterial({ color: 0x9ff5dc }));
+                        marker.position.copy(latLonToVector3(T, lat, lon, 1.02));
+                        group.add(marker);
+                        const label = makeLabel(T, name);
+                        label.position.copy(latLonToVector3(T, lat, lon, 1.11));
+                        label.lookAt(camera.position);
+                        group.add(label);
+                    });
+                }
+                function latLonToVector3(T, lat, lon, radius) {
+                    const phi = (90 - lat) * Math.PI / 180;
+                    const theta = (lon + 180) * Math.PI / 180;
+                    return new T.Vector3(-radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta));
+                }
+                function makeLabel(T, text) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 256; canvas.height = 48;
+                    ctx.font = '700 18px system-ui'; ctx.fillStyle = '#d9fbff'; ctx.fillText(text, 8, 30);
+                    const sprite = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(canvas), transparent: true, depthWrite: false }));
+                    sprite.scale.set(.42, .08, 1);
+                    return sprite;
+                }
+                const resize = () => { const size = earthCanvas.clientWidth || 320; renderer.setSize(size, size, false); camera.aspect = 1; camera.updateProjectionMatrix(); };
+                const animate = () => { requestAnimationFrame(animate); globe3d.rotation.y += .0007; renderer.render(scene, camera); };
+                new ResizeObserver(resize).observe(earthCanvas);
+                resize(); animate();
+            };
+                        const initWhenReady = () => window.THREE ? initRealEarth() : window.setTimeout(initWhenReady, 40);
+            initWhenReady();
+            let frame = 0;
+            let rotationX = 0;
+            let rotationY = 0;
+            let zoom = 1;
+            let dragging = false;
+            let activePointer = null;
+            let lastX = 0;
+            let lastY = 0;
+            let pinchDistance = 0;
+
+            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+            const render = () => {
+                if (frame) return;
+                frame = requestAnimationFrame(() => {
+                    globe.style.setProperty('--tilt-x', `${rotationX.toFixed(2)}deg`);
+                    globe.style.setProperty('--tilt-y', `${rotationY.toFixed(2)}deg`);
+                    globe.style.setProperty('--earth-scale', zoom.toFixed(3));
+                    frame = 0;
+                });
+            };
+            const distance = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+            globe.style.setProperty('--earth-scale', '1');
+            stage.addEventListener('pointerdown', (event) => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+                activePointer = event.pointerId;
+                dragging = true;
+                lastX = event.clientX;
+                lastY = event.clientY;
+                stage.setPointerCapture?.(event.pointerId);
+                stage.classList.add('earth-stage--dragging');
+            });
+            stage.addEventListener('pointermove', (event) => {
+                if (!dragging || event.pointerId !== activePointer) return;
+                rotationY += (event.clientX - lastX) * .45;
+                rotationX = clamp(rotationX - (event.clientY - lastY) * .32, -34, 34);
+                lastX = event.clientX;
+                lastY = event.clientY;
+                render();
+            });
+            const releasePointer = (event) => {
+                if (event.pointerId !== activePointer) return;
+                dragging = false;
+                activePointer = null;
+                stage.releasePointerCapture?.(event.pointerId);
+                stage.classList.remove('earth-stage--dragging');
+            };
+            stage.addEventListener('pointerup', releasePointer);
+            stage.addEventListener('pointercancel', releasePointer);
+            stage.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                zoom = clamp(zoom - event.deltaY * .0012, .78, 1.55);
+                render();
+            }, { passive: false });
+
+            stage.addEventListener('touchstart', (event) => {
+                if (event.touches.length === 2) pinchDistance = distance(event.touches[0], event.touches[1]);
+            }, { passive: true });
+            stage.addEventListener('touchmove', (event) => {
+                if (event.touches.length !== 2 || !pinchDistance) return;
+                const nextDistance = distance(event.touches[0], event.touches[1]);
+                zoom = clamp(zoom * (nextDistance / pinchDistance), .78, 1.55);
+                pinchDistance = nextDistance;
+                render();
+            }, { passive: true });
+            stage.addEventListener('touchend', () => { pinchDistance = 0; }, { passive: true });
+        })();
+    </script>
+    <script>
+        (() => {
+            const stage = document.querySelector('.earth-stage');
+            const dateInput = document.getElementById('orbit-date');
+            const dateOutput = document.getElementById('orbit-date-output');
+            const calibrationOutput = document.getElementById('orbit-calibration-output');
+            const offlineOutput = document.getElementById('orbit-offline-output');
+            const speedSelect = document.getElementById('orbit-speed');
+            const playButton = document.getElementById('orbit-play');
+            const resetButton = document.getElementById('orbit-reset');
+            if (!stage || !dateInput || !dateOutput || !calibrationOutput || !offlineOutput || !speedSelect || !playButton || !resetButton) return;
+
+            const bodies = Object.fromEntries([...stage.querySelectorAll('.solar-body')].map((node) => [node.dataset.body, node]));
+            const rad = Math.PI / 180;
+            const dayMs = 86400000;
+            const tenYearsMs = 10 * 365.2425 * dayMs;
+            const j2000 = Date.UTC(2000, 0, 1, 12);
+            const storageKey = 'bonds-studio-orbit-timeline-v1';
+            const elements = {
+                Mercury: { a: .38709927, e: .20563593, L: 252.2503235, p: 77.45779628, period: 87.969, direction: 1, spinHours: 1407.6 },
+                Venus: { a: .72333566, e: .00677672, L: 181.9790995, p: 131.60246718, period: 224.701, direction: 1, spinHours: -5832.5 },
+                Earth: { a: 1.00000261, e: .01671123, L: 100.46457166, p: 102.93768193, period: 365.256, direction: 1, spinHours: 23.934 },
+                Mars: { a: 1.52371034, e: .0933941, L: -4.55343205, p: -23.94362959, period: 686.98, direction: 1, spinHours: 24.623 },
+                Jupiter: { a: 5.202887, e: .04838624, L: 34.39644051, p: 14.72847983, period: 4332.59, direction: 1, spinHours: 9.925 },
+                Saturn: { a: 9.53667594, e: .05386179, L: 49.95424423, p: 92.59887831, period: 10759.22, direction: 1, spinHours: 10.656 },
+                Uranus: { a: 19.18916464, e: .04725744, L: 313.23810451, p: 170.95427627, period: 30688.5, direction: 1, spinHours: -17.24 },
+                Neptune: { a: 30.06992276, e: .00859048, L: -55.12002969, p: 44.96476227, period: 60182, direction: 1, spinHours: 16.11 }
+            };
+            const spinProfiles = {
+                Sun: { hours: 648, direction: 1 },
+                Moon: { hours: 655.72, direction: 1 },
+                ...Object.fromEntries(Object.entries(elements).filter(([name]) => name !== 'Earth').map(([name, item]) => [name, { hours: item.spinHours, direction: item.spinHours < 0 ? -1 : 1 }]))
+            };
+            const applySpinProfiles = () => Object.entries(spinProfiles).forEach(([name, profile]) => {
+                const node = bodies[name];
+                if (!node) return;
+                const compressedSeconds = Math.max(2.8, Math.abs(profile.hours) / elements.Earth.spinHours * 12);
+                node.style.setProperty('--spin-duration', `${compressedSeconds.toFixed(2)}s`);
+                node.style.setProperty('--spin-direction', profile.direction < 0 ? 'reverse' : 'normal');
+            });
+            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+            const normalizeAngle = (angle) => ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const solveKepler = (meanAnomaly, eccentricity) => {
+                let eccentricAnomaly = meanAnomaly;
+                for (let i = 0; i < 6; i += 1) eccentricAnomaly -= (eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - meanAnomaly) / (1 - eccentricity * Math.cos(eccentricAnomaly));
+                return eccentricAnomaly;
+            };
+            const heliocentric = (name, days) => {
+                const item = elements[name];
+                const meanAnomaly = normalizeAngle((item.L - item.p) * rad + item.direction * (days / item.period) * Math.PI * 2);
+                const eccentricAnomaly = solveKepler(meanAnomaly, item.e);
+                const xPrime = item.a * (Math.cos(eccentricAnomaly) - item.e);
+                const yPrime = item.a * Math.sqrt(1 - item.e * item.e) * Math.sin(eccentricAnomaly);
+                const perihelion = item.p * rad;
+                return { x: xPrime * Math.cos(perihelion) - yPrime * Math.sin(perihelion), y: xPrime * Math.sin(perihelion) + yPrime * Math.cos(perihelion) };
+            };
+            const relativeScreenPosition = (vector, distanceScale = 1) => {
+                const distance = Math.hypot(vector.x, vector.y);
+                const angle = Math.atan2(vector.y, vector.x);
+                const radius = 14 + 29 * Math.sqrt(clamp(distance / 30, 0, 1));
+                return { left: 50 + Math.cos(angle) * radius, top: 50 - Math.sin(angle) * radius, scale: clamp(distanceScale * (1.08 - distance * .008), .58, 1.12) };
+            };
+            const setPosition = (name, vector, scale = 1) => {
+                const node = bodies[name];
+                if (!node) return;
+                const position = relativeScreenPosition(vector, scale);
+                node.style.setProperty('--orbital-left', `${position.left.toFixed(2)}%`);
+                node.style.setProperty('--orbital-top', `${position.top.toFixed(2)}%`);
+                node.style.setProperty('--orbital-scale', position.scale.toFixed(3));
+            };
+            const formatOutput = (date) => date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const toInputValue = (date) => { const pad = (value) => String(value).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; };
+            const clampDate = (date, epoch) => new Date(clamp(date.getTime(), epoch.getTime(), epoch.getTime() + tenYearsMs));
+            const readDate = () => { const date = new Date(dateInput.value); return Number.isNaN(date.getTime()) ? new Date() : date; };
+            const loadState = () => { try { const saved = JSON.parse(localStorage.getItem(storageKey) || 'null'); if (!saved || !saved.epoch || !saved.simulatedDate) return null; const epoch = new Date(saved.epoch); const simulatedDate = new Date(saved.simulatedDate); if (Number.isNaN(epoch.getTime()) || Number.isNaN(simulatedDate.getTime())) return null; return { ...saved, epoch: epoch.toISOString(), simulatedDate: simulatedDate.toISOString() }; } catch { return null; } };
+            const initialState = loadState();
+            const epoch = initialState ? new Date(initialState.epoch) : new Date();
+            let simulatedDate = initialState ? clampDate(new Date(initialState.simulatedDate), epoch) : epoch;
+            let playing = initialState?.playing !== false;
+            if (initialState?.speed) speedSelect.value = String(initialState.speed);
+            playButton.textContent = playing ? 'Pause simulation' : 'Play simulation';
+            const saveState = () => { try { localStorage.setItem(storageKey, JSON.stringify({ version: 1, epoch: epoch.toISOString(), simulatedDate: simulatedDate.toISOString(), playing, speed: Number(speedSelect.value), characteristics: elements, savedAt: new Date().toISOString() })); offlineOutput.textContent = navigator.onLine ? 'Timeline saved locally' : 'Offline timeline active'; } catch { offlineOutput.textContent = 'Local storage unavailable'; } };
+            const updateScene = () => {
+                simulatedDate = clampDate(simulatedDate, epoch);
+                const date = simulatedDate;
+                dateInput.value = toInputValue(date);
+                const days = (date.getTime() - j2000) / dayMs;
+                const earth = heliocentric('Earth', days);
+                const sun = { x: -earth.x, y: -earth.y };
+                setPosition('Sun', sun, 1.15);
+                Object.keys(elements).filter((name) => name !== 'Earth').forEach((name) => {
+                    const planet = heliocentric(name, days);
+                    setPosition(name, { x: planet.x - earth.x, y: planet.y - earth.y }, name === 'Jupiter' ? 1.15 : 1);
+                });
+                const moonAngle = (218.316 * rad + days * 13.176396 * rad);
+                const moonDistance = .00257;
+                setPosition('Moon', { x: Math.cos(moonAngle) * moonDistance, y: Math.sin(moonAngle) * moonDistance }, 1.1);
+                dateOutput.textContent = formatOutput(date);
+                const simulatedDegreesPerDay = Number(speedSelect.value) * 360 / elements.Earth.period;
+                calibrationOutput.textContent = `Δλ ${simulatedDegreesPerDay.toFixed(3)}°/day · prograde · Keplerian`;
+            };
+            let lastFrame = performance.now();
+            let lastPersist = 0;
+            const animateTime = (now) => {
+                if (playing) { const elapsedSeconds = Math.min((now - lastFrame) / 1000, .2); const nextDate = clampDate(new Date(simulatedDate.getTime() + elapsedSeconds * Number(speedSelect.value) * dayMs), epoch); simulatedDate = nextDate; if (nextDate.getTime() >= epoch.getTime() + tenYearsMs) { playing = false; playButton.textContent = 'Play simulation'; } updateScene(); if (now - lastPersist > 750) { saveState(); lastPersist = now; } }
+                lastFrame = now; requestAnimationFrame(animateTime);
+            };
+            applySpinProfiles();
+            dateInput.addEventListener('input', () => { simulatedDate = clampDate(readDate(), epoch); updateScene(); saveState(); });
+            speedSelect.addEventListener('change', () => { updateScene(); saveState(); });
+            playButton.addEventListener('click', () => { playing = !playing; playButton.textContent = playing ? 'Pause simulation' : 'Play simulation'; saveState(); });
+            resetButton.addEventListener('click', () => { simulatedDate = epoch; playing = true; playButton.textContent = 'Pause simulation'; updateScene(); saveState(); });
+            updateScene(); saveState(); requestAnimationFrame(animateTime);
+        })();
+    </script>
+    <script>
+        (() => {
+            const select = document.getElementById('street-location-select');
+            const link = document.getElementById('street-view-link');
+            if (!select || !link) return;
+            const updateStreetViewLink = () => {
+                const [lat, lng] = select.value.split(',');
+                link.href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+            };
+            select.addEventListener('change', updateStreetViewLink);
+            updateStreetViewLink();
+        })();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./offline.js').catch(() => {});
+    </script>
 </body>
 </html>
