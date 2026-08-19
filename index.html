@@ -376,9 +376,14 @@
                 Object.entries(solarRadii).forEach(([name, radius]) => {
                     const body = new THREE.Group();
                     body.name = `${name}-3d`;
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 24), solarMaterials[name]);
-                    mesh.castShadow = true; mesh.receiveShadow = true;
+                    const sphereGeometry = new THREE.SphereGeometry(radius, 48, 32);
+                    sphereGeometry.computeVertexNormals();
+                    const mesh = new THREE.Mesh(sphereGeometry, solarMaterials[name]);
+                    mesh.name = `${name}-sphere`; mesh.castShadow = true; mesh.receiveShadow = true;
                     body.add(mesh);
+                    const depthShell = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.035, 48, 32), new THREE.MeshBasicMaterial({ color: solarMaterials[name].color, transparent: true, opacity: .12, side: THREE.BackSide, depthWrite: false }));
+                    depthShell.name = `${name}-depth-shell`;
+                    body.add(depthShell);
                     if (name === 'Saturn') {
                         const ring = new THREE.Mesh(new THREE.RingGeometry(radius * 1.45, radius * 2.15, 64), new THREE.MeshStandardMaterial({ color: 0xd9bb91, roughness: .72, transparent: true, opacity: .82, side: THREE.DoubleSide }));
                         ring.rotation.x = Math.PI / 2.7;
@@ -388,8 +393,9 @@
                     solarMeshes[name] = body;
                     solar3d.add(body);
                 });
-                window.bondsSolar3d = {
-                    meshes: solarMeshes,
+                    window.bondsSolar3d = {
+                        meshes: solarMeshes,
+                        sphereObjects: Object.fromEntries(Object.entries(solarMeshes).map(([name, body]) => [name, body.getObjectByName(`${name}-sphere`)])),
                     update(positions, focus) {
                         Object.entries(positions).forEach(([name, p]) => {
                             const body = solarMeshes[name]; if (!body) return;

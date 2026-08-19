@@ -42,3 +42,7 @@ Production verification after the balanced extrusion deployment succeeded. The l
 The layered 12-step geometry loads over HTTP without runtime or shader errors, but the first visual pass shows a dark central region from the new deeper profile and normal-based lighting. The extrusion topology remains spherical, and the next refinement will retain the deeper Z/XY layer construction while increasing fill readability for the front/back blend.
 
 The final deeper extrusion test over HTTP succeeded after restoring native sphere UV sampling. The 16-layer, 1.22× depth profile renders on the closed Earth mesh, the shader is active with seam width 0.92, the Earth controller is active, and time/animation uniforms continue updating.
+
+Final production verification succeeded after deployment. The live Earth controller and dual-map shader are active, seam width is 0.92, and both animation and time uniforms are updating. The deeper 16-layer, 1.22× front/back extrusion is now published on the production globe.
+
+Planet sphere test succeeded over HTTP. Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, and Neptune each expose a Three.js `SphereGeometry` mesh with 48 radial segments and 32 vertical segments, plus a named depth shell. Orbital controls and the solar controller remain active.
