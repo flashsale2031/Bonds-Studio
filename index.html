@@ -111,7 +111,8 @@
         .space-scene-label { position: absolute; top: 18px; left: 22px; z-index: 1; color: rgba(184,224,237,.65); font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; }
         .orbit-controls { position: absolute; top: 42px; left: 22px; z-index: 7; display: grid; gap: 8px; width: min(228px, 42%); padding: 10px; border: 1px solid rgba(170,214,235,.16); border-radius: 12px; background: rgba(3,15,26,.72); box-shadow: 0 12px 32px rgba(0,0,0,.2); backdrop-filter: blur(12px); transition: opacity .2s var(--ease), transform .2s var(--ease); }
         .orbit-controls.is-closed { opacity: 0; pointer-events: none; transform: translateY(-8px) scale(.96); }
-        .orbit-controls__close { position: absolute; top: 6px; right: 7px; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid rgba(117,230,255,.28); border-radius: 50%; color: var(--cyan); background: rgba(117,230,255,.08); font-size: 1rem; line-height: 1; cursor: pointer; }
+        .orbit-controls__close { position: absolute; top: 8px; right: 8px; z-index: 2; display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border: 1px solid rgba(117,230,255,.42); border-radius: 50%; color: var(--cyan); background: rgba(3,15,26,.92); font-size: 1rem; line-height: 1; cursor: pointer; }
+        .orbit-controls__row:first-child { padding-right: 30px; }
         .orbit-controls__close:hover, .orbit-controls__close:focus-visible { color: #06111b; background: var(--cyan); outline: none; }
         .orbit-controls__open { position: absolute; top: 42px; left: 22px; z-index: 7; display: none; min-height: 32px; padding: 0 11px; border: 1px solid rgba(117,230,255,.32); border-radius: 999px; color: var(--cyan); background: rgba(3,15,26,.82); font-size: .64rem; cursor: pointer; }
         .orbit-controls.is-closed + .orbit-controls__open { display: inline-flex; align-items: center; }
