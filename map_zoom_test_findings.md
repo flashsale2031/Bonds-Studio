@@ -36,3 +36,5 @@ The HTTP-served dual-sided Earth shader test succeeded. The runtime shader is ac
 The continuous-sphere shader test succeeded over HTTP. The live shader has both front and back texture channels, `uSeamWidth = 0.92`, `uBlendPower = 1.65`, `THREE.DoubleSide`, active animation and time uniforms, and a vertex shader using the closed sphere model transform. The Earth visibly renders as one spherical mesh with the map channels wrapped from the same normal-derived spherical coordinates.
 
 Balanced extrusion test succeeded over HTTP. The Earth remains a smooth closed spherical mesh, the dual-map shader is active with seam width 0.92, the Earth controller is active, and animation/time uniforms continue updating. No shader or geometry errors appeared beyond the existing Three.js legacy-build warning.
+
+Production verification after the balanced extrusion deployment succeeded. The live Earth shader is active with seam width 0.92 and blend power 1.65, the Earth controller is active, and the Earth stage retains `touch-action: none`. The public globe renders as one closed sphere with balanced vertical, horizontal, depth, and diagonal pressure directions.
