@@ -404,23 +404,38 @@
                     view(x, y) { solar3d.rotation.x = y * Math.PI / 180; solar3d.rotation.y = x * Math.PI / 180; }
                 };
                 window.bondsEarth3d = { view(x, y) { globe3d.rotation.x = y * Math.PI / 180; globe3d.rotation.y = x * Math.PI / 180; } };
-                const inflateGeometry = (geometry, pressure = .024) => {
-                    const position = geometry.attributes.position;
-                    const vertex = new THREE.Vector3();
-                    const directions = [
-                        new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1),
-                        new THREE.Vector3(1, 1, 0).normalize(), new THREE.Vector3(1, -1, 0).normalize(),
-                        new THREE.Vector3(1, 0, 1).normalize(), new THREE.Vector3(1, 0, -1).normalize(),
-                        new THREE.Vector3(0, 1, 1).normalize(), new THREE.Vector3(0, 1, -1).normalize()
-                    ];
-                    for (let i = 0; i < position.count; i += 1) {
-                        vertex.fromBufferAttribute(position, i).normalize();
-                        // Balanced pressure pairs: top-bottom, left-right, front-back, and all diagonal planes.
-                        const directionalSupport = directions.reduce((sum, direction) => sum + Math.abs(vertex.dot(direction)), 0) / directions.length;
-                        const balancedPressure = pressure * (.94 + directionalSupport * .06);
-                        vertex.multiplyScalar(1 + balancedPressure);
-                        position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+                const calculateSphereExtrusionLayers = (radius, numLayers) => {
+                    const layers = [];
+                    for (let i = 0; i <= numLayers; i += 1) {
+                        const angleRad = (i / numLayers) * Math.PI / 2;
+                        const zHeight = radius * Math.sin(angleRad);
+                        const xyScale = Math.cos(angleRad);
+                        const previous = layers[i - 1];
+                        const deltaZ = previous ? zHeight - previous.zHeight : 0;
+                        const deltaRadius = previous ? previous.xyScale * radius - xyScale * radius : 0;
+                        layers.push({ angleDegrees: i * 90 / numLayers, zHeight, xyScale, diagonalStep: Math.hypot(deltaZ, deltaRadius) });
                     }
+                    return layers;
+                };
+                const extrudeSphereGeometry = (geometry, radius = 1, numLayers = 12, depthScale = 1.12) => {
+                    const layers = calculateSphereExtrusionLayers(radius, numLayers);
+                    const position = geometry.attributes.position;
+                    const normal = new THREE.Vector3();
+                    for (let i = 0; i < position.count; i += 1) {
+                        normal.fromBufferAttribute(position, i).normalize();
+                        const angle = Math.asin(Math.min(1, Math.abs(normal.z)));
+                        const layerIndex = Math.min(numLayers, Math.round(angle / (Math.PI / 2) * numLayers));
+                        const layer = layers[layerIndex];
+                        const xyLength = Math.hypot(normal.x, normal.y) || 1;
+                        const side = normal.z < 0 ? -1 : 1;
+                        const x = (normal.x / xyLength) * layer.xyScale * radius;
+                        const y = (normal.y / xyLength) * layer.xyScale * radius;
+                        const z = side * layer.zHeight;
+                        // Apply the same extrusion scale to front, back, and every diagonal layer.
+                        position.setXYZ(i, x * depthScale, y * depthScale, z * depthScale);
+                    }
+                    geometry.userData.extrusionLayers = layers;
+                    geometry.userData.extrusionDepthScale = depthScale;
                     position.needsUpdate = true;
                     geometry.computeVertexNormals();
                     return geometry;
@@ -435,7 +450,7 @@
                     backTexture.repeat.set(-1, 1);
                     backTexture.offset.x = 1;
                     backTexture.needsUpdate = true;
-                    const earthGeometry = inflateGeometry(new THREE.SphereGeometry(1, 96, 64), .026);
+                    const earthGeometry = extrudeSphereGeometry(new THREE.SphereGeometry(1, 96, 64), 1, 16, 1.22);
                     const earthUniforms = {
                         uFrontMap: { value: texture },
                         uBackMap: { value: backTexture },
@@ -449,9 +464,11 @@
                         uniforms: earthUniforms,
                         side: THREE.DoubleSide,
                         vertexShader: `
+                            varying vec2 vUv;
                             varying vec3 vWorldNormal;
                             varying vec3 vWorldPosition;
                             void main() {
+                                vUv = uv;
                                 vec4 worldPosition = modelMatrix * vec4(position, 1.0);
                                 vWorldPosition = worldPosition.xyz;
                                 vWorldNormal = normalize(mat3(modelMatrix) * normal);
@@ -466,6 +483,7 @@
                             uniform float uTime;
                             uniform float uAnimation;
                             uniform vec3 uLightDirection;
+                            varying vec2 vUv;
                             varying vec3 vWorldNormal;
                             varying vec3 vWorldPosition;
                             void main() {
@@ -473,15 +491,12 @@
                                 vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
                                 float facing = abs(dot(normal, viewDirection));
                                 float normalMask = pow(smoothstep(0.0, uSeamWidth, 1.0 - facing), uBlendPower);
-                                float longitude = atan(normal.z, normal.x) / 6.28318530718 + .5;
-                                float latitude = asin(clamp(normal.y, -1.0, 1.0)) / 3.14159265359 + .5;
-                                vec2 sphericalUv = vec2(fract(longitude), clamp(latitude, 0.001, .999));
-                                vec2 backUv = vec2(fract(sphericalUv.x + .5), sphericalUv.y);
-                                vec4 frontColor = texture2D(uFrontMap, sphericalUv);
+                                vec2 backUv = vec2(1.0 - vUv.x, vUv.y);
+                                vec4 frontColor = texture2D(uFrontMap, vUv);
                                 vec4 backColor = texture2D(uBackMap, backUv);
                                 vec4 blendedColor = mix(frontColor, backColor, normalMask * .86);
                                 if (!gl_FrontFacing) blendedColor = mix(backColor, frontColor, normalMask * .32);
-                                float light = .42 + .72 * max(dot(normal, normalize(uLightDirection)), 0.0);
+                                float light = .62 + .62 * max(dot(normal, normalize(uLightDirection)), 0.0);
                                 float animationPulse = .985 + .015 * sin(uTime * .7 + uAnimation);
                                 vec3 finalColor = blendedColor.rgb * light * animationPulse;
                                 gl_FragColor = vec4(finalColor, blendedColor.a);
@@ -492,9 +507,9 @@
                     mesh.castShadow = true; mesh.receiveShadow = true;
                     globe3d.add(mesh);
                     window.bondsEarthShader = { material: earthMaterial, uniforms: earthUniforms };
-                    const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.012, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
+                    const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.24, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
                     globe3d.add(depthShell);
-                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.045, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
+                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.29, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
                     globe3d.add(atmosphere);
                     addLocationLabels(THREE, globe3d);
                 });

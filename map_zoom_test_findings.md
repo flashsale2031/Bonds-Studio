@@ -38,3 +38,7 @@ The continuous-sphere shader test succeeded over HTTP. The live shader has both 
 Balanced extrusion test succeeded over HTTP. The Earth remains a smooth closed spherical mesh, the dual-map shader is active with seam width 0.92, the Earth controller is active, and animation/time uniforms continue updating. No shader or geometry errors appeared beyond the existing Three.js legacy-build warning.
 
 Production verification after the balanced extrusion deployment succeeded. The live Earth shader is active with seam width 0.92 and blend power 1.65, the Earth controller is active, and the Earth stage retains `touch-action: none`. The public globe renders as one closed sphere with balanced vertical, horizontal, depth, and diagonal pressure directions.
+
+The layered 12-step geometry loads over HTTP without runtime or shader errors, but the first visual pass shows a dark central region from the new deeper profile and normal-based lighting. The extrusion topology remains spherical, and the next refinement will retain the deeper Z/XY layer construction while increasing fill readability for the front/back blend.
+
+The final deeper extrusion test over HTTP succeeded after restoring native sphere UV sampling. The 16-layer, 1.22× depth profile renders on the closed Earth mesh, the shader is active with seam width 0.92, the Earth controller is active, and time/animation uniforms continue updating.
