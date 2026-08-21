@@ -204,6 +204,40 @@
         .metric { color: var(--mint); font-size: 2rem; font-weight: 300; letter-spacing: -.06em; }
         .metric-label { color: var(--muted); font-size: .72rem; }
         .footer { display: flex; justify-content: space-between; gap: 18px; padding: 24px 0 30px; border-top: 1px solid var(--line); color: var(--muted); font-size: .74rem; }
+        .agent-launch { position: fixed; right: 24px; bottom: 24px; z-index: 20; display: inline-flex; align-items: center; gap: 9px; min-height: 46px; padding: 0 16px; border: 1px solid rgba(117,230,255,.42); border-radius: 999px; color: var(--ink); background: rgba(4,18,30,.86); box-shadow: 0 16px 40px rgba(0,0,0,.35), 0 0 24px rgba(117,230,255,.12); backdrop-filter: blur(14px); cursor: pointer; }
+        .agent-launch::before { width: 8px; height: 8px; border-radius: 50%; content: ''; background: var(--mint); box-shadow: 0 0 12px var(--mint); }
+        .agent-launch:hover, .agent-launch:focus-visible { border-color: var(--cyan); background: rgba(9,35,52,.94); outline: none; transform: translateY(-2px); }
+        .agent-panel { position: fixed; right: 24px; bottom: 82px; z-index: 19; display: grid; grid-template-rows: auto minmax(110px, 1fr) auto auto; width: min(430px, calc(100vw - 28px)); max-height: min(720px, calc(100vh - 110px)); overflow: hidden; border: 1px solid rgba(117,230,255,.24); border-radius: 20px; background: rgba(4,16,28,.94); box-shadow: 0 24px 80px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.05); backdrop-filter: blur(22px); opacity: 0; pointer-events: none; transform: translateY(16px) scale(.98); transition: opacity .22s ease, transform .22s var(--ease); }
+        .agent-panel.is-open { opacity: 1; pointer-events: auto; transform: none; }
+        .agent-panel__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 18px 18px 14px; border-bottom: 1px solid var(--line); }
+        .agent-panel__head h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+        .agent-panel__head p { margin: 5px 0 0; color: var(--muted); font-size: .7rem; }
+        .agent-close { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); background: transparent; cursor: pointer; }
+        .agent-close:hover, .agent-close:focus-visible { color: #06111b; background: var(--cyan); outline: none; }
+        .agent-feed { min-height: 126px; max-height: 235px; overflow: auto; padding: 14px 16px; }
+        .agent-message { margin: 0 0 10px; padding: 10px 11px; border: 1px solid rgba(170,214,235,.12); border-radius: 12px; background: rgba(255,255,255,.035); }
+        .agent-message--user { margin-left: 28px; border-color: rgba(117,230,255,.2); background: rgba(117,230,255,.07); }
+        .agent-message__meta { color: var(--cyan); font-size: .58rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+        .agent-message p { margin: 5px 0 0; color: var(--ink); font-size: .75rem; line-height: 1.45; }
+        .agent-plan { margin: 0; padding: 13px 17px 14px 34px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); list-style: none; counter-reset: plan; }
+        .agent-plan li { position: relative; display: flex; gap: 9px; padding: 5px 0; color: var(--muted); }
+        .agent-plan li > span { display: grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; border: 1px solid rgba(170,214,235,.26); border-radius: 50%; font-size: .58rem; }
+        .agent-plan li strong, .agent-plan li small { display: block; }
+        .agent-plan li strong { color: var(--ink); font-size: .68rem; }
+        .agent-plan li small { margin-top: 2px; font-size: .6rem; line-height: 1.35; }
+        .agent-plan li.is-active > span { color: #06111b; border-color: var(--cyan); background: var(--cyan); }
+        .agent-plan li.is-done > span { color: #06111b; border-color: var(--mint); background: var(--mint); }
+        .agent-status { display: block; padding: 9px 17px 0; color: var(--mint); font-size: .62rem; }
+        .agent-status.is-busy { color: var(--cyan); }
+        .agent-form { display: flex; gap: 8px; padding: 10px 16px 16px; }
+        .agent-form input { min-width: 0; flex: 1; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: rgba(255,255,255,.05); font-size: .75rem; }
+        .agent-form input:focus-visible { border-color: var(--cyan); outline: 2px solid rgba(117,230,255,.22); }
+        .agent-form button { padding: 0 14px; border: 0; border-radius: 10px; color: #06111b; background: var(--cyan); font-size: .7rem; font-weight: 800; cursor: pointer; }
+        .agent-form button:hover, .agent-form button:focus-visible { background: #c0f5ff; outline: none; }
+        .agent-quick-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+        .agent-quick-actions button { padding: 6px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; font-size: .59rem; cursor: pointer; }
+        .agent-quick-actions button:hover, .agent-quick-actions button:focus-visible { color: var(--cyan); border-color: rgba(117,230,255,.4); outline: none; }
+        @media (max-width: 560px) { .agent-launch { right: 14px; bottom: 14px; } .agent-panel { right: 14px; bottom: 70px; } }
 
         @keyframes orbit-spin { to { transform: rotate(360deg); } }
         @keyframes continent-drift { to { transform: rotate(-15deg) translateX(12%); } }
@@ -336,6 +370,17 @@
         <footer class="footer"><span>Bonds Studio © 2027</span><span>Independent creative systems for connected worlds.</span></footer>
     </div>
 
+    <button class="agent-launch" id="agent-open" type="button">Open Bonds Agent</button>
+    <aside class="agent-panel" id="agent-panel" aria-label="Bonds Studio AI assistant">
+        <header class="agent-panel__head"><div><h2>Bonds Agent</h2><p>Plan, act, verify. Run <strong id="agent-run-count">0</strong> local workflows.</p></div><button class="agent-close" id="agent-close" type="button" aria-label="Close assistant">×</button></header>
+        <div class="agent-feed" id="agent-feed" aria-live="polite"></div>
+        <ol class="agent-plan" id="agent-plan" aria-label="Current task plan"></ol>
+        <div class="agent-quick-actions" aria-label="Assistant shortcuts"><button type="button" data-agent-command="Diagnose the workspace and report any issues">Diagnose workspace</button><button type="button" data-agent-command="Focus the orbital view on Mars">Focus Mars</button><button type="button" data-agent-command="Open London on the map">Open London</button></div>
+        <span class="agent-status" id="agent-status">Ready</span>
+        <form class="agent-form" id="agent-form"><input id="agent-input" autocomplete="off" placeholder="Describe a problem or multi-step task…" aria-label="Describe a task" /><button type="submit">Run</button></form>
+    </aside>
+
+    <script src="assistant.js"></script>
     <script>
         (() => {
             const stage = document.querySelector('.earth-stage');
