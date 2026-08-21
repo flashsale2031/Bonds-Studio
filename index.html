@@ -516,79 +516,88 @@
                     geometry.computeVertexNormals();
                     return geometry;
                 };
-                const loader = new THREE.TextureLoader();
-                loader.load('assets/earth-blue-marble.png', (texture) => {
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                    const backTexture = texture.clone();
-                    backTexture.colorSpace = THREE.SRGBColorSpace;
-                    backTexture.wrapS = THREE.RepeatWrapping;
-                    backTexture.repeat.set(-1, 1);
-                    backTexture.offset.x = 1;
-                    backTexture.needsUpdate = true;
-                    const earthGeometry = extrudeSphereGeometry(new THREE.SphereGeometry(1, 96, 64), 1, 16, 1.22);
-                    const earthUniforms = {
-                        uFrontMap: { value: texture },
-                        uBackMap: { value: backTexture },
-                        uBlendPower: { value: 1.65 },
-                        uSeamWidth: { value: .92 },
-                        uTime: { value: 0 },
-                        uAnimation: { value: 0 },
-                        uLightDirection: { value: new THREE.Vector3(-.55, .4, 1).normalize() }
-                    };
-                    const earthMaterial = new THREE.ShaderMaterial({
-                        uniforms: earthUniforms,
-                        side: THREE.DoubleSide,
-                        vertexShader: `
-                            varying vec2 vUv;
-                            varying vec3 vWorldNormal;
-                            varying vec3 vWorldPosition;
-                            void main() {
-                                vUv = uv;
-                                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-                                vWorldPosition = worldPosition.xyz;
-                                vWorldNormal = normalize(mat3(modelMatrix) * normal);
-                                gl_Position = projectionMatrix * viewMatrix * worldPosition;
-                            }
-                        `,
-                        fragmentShader: `
-                            uniform sampler2D uFrontMap;
-                            uniform sampler2D uBackMap;
-                            uniform float uBlendPower;
-                            uniform float uSeamWidth;
-                            uniform float uTime;
-                            uniform float uAnimation;
-                            uniform vec3 uLightDirection;
-                            varying vec2 vUv;
-                            varying vec3 vWorldNormal;
-                            varying vec3 vWorldPosition;
-                            void main() {
-                                vec3 normal = normalize(vWorldNormal);
-                                vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
-                                float facing = abs(dot(normal, viewDirection));
-                                float normalMask = pow(smoothstep(0.0, uSeamWidth, 1.0 - facing), uBlendPower);
-                                vec2 backUv = vec2(1.0 - vUv.x, vUv.y);
-                                vec4 frontColor = texture2D(uFrontMap, vUv);
-                                vec4 backColor = texture2D(uBackMap, backUv);
-                                vec4 blendedColor = mix(frontColor, backColor, normalMask * .86);
-                                if (!gl_FrontFacing) blendedColor = mix(backColor, frontColor, normalMask * .32);
-                                float light = .62 + .62 * max(dot(normal, normalize(uLightDirection)), 0.0);
-                                float animationPulse = .985 + .015 * sin(uTime * .7 + uAnimation);
-                                vec3 finalColor = blendedColor.rgb * light * animationPulse;
-                                gl_FragColor = vec4(finalColor, blendedColor.a);
-                            }
-                        `
-                    });
-                    const mesh = new THREE.Mesh(earthGeometry, earthMaterial);
-                    mesh.castShadow = true; mesh.receiveShadow = true;
-                    globe3d.add(mesh);
-                    window.bondsEarthShader = { material: earthMaterial, uniforms: earthUniforms };
-                    const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.24, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
-                    globe3d.add(depthShell);
-                    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.29, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
-                    globe3d.add(atmosphere);
-                    addLocationLabels(THREE, globe3d);
+                const textureLoader = new THREE.TextureLoader();
+                const loadTexture = (file, colorSpace = THREE.SRGBColorSpace) => new Promise((resolve, reject) => {
+                    textureLoader.load(file, texture => { texture.colorSpace = colorSpace; texture.anisotropy = renderer.capabilities.getMaxAnisotropy(); resolve(texture); }, undefined, reject);
                 });
+                const parseEarthObj = text => {
+                    const source = text.split(/\r?\n/);
+                    const vertices = [];
+                    const indices = [];
+                    source.forEach(line => {
+                        const parts = line.trim().split(/\s+/);
+                        if (parts[0] === 'v' && parts.length >= 4) vertices.push(Number(parts[1]), Number(parts[2]), Number(parts[3]));
+                        if (parts[0] === 'f' && parts.length >= 4) {
+                            const face = parts.slice(1).map(item => Number(item.split('/')[0]) - 1).filter(Number.isInteger);
+                            for (let i = 1; i < face.length - 1; i += 1) indices.push(face[0], face[i], face[i + 1]);
+                        }
+                    });
+                    const geometry = new THREE.BufferGeometry();
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                    geometry.setIndex(indices); geometry.computeVertexNormals();
+                    return geometry;
+                };
+                const addEarthModel = async () => {
+                    try {
+                        const [objResponse, colorMap, nightMap, bumpMap, specMap, cloudsMap] = await Promise.all([
+                            fetch('assets/earth-model/earth.obj'),
+                            loadTexture('assets/earth-model/Color Map.jpg'),
+                            loadTexture('assets/earth-model/Night Lights.jpg'),
+                            loadTexture('assets/earth-model/Bump.jpg', THREE.NoColorSpace),
+                            loadTexture('assets/earth-model/Spec Mask.png', THREE.NoColorSpace),
+                            loadTexture('assets/earth-model/Clouds.png', THREE.NoColorSpace),
+                        ]);
+                        if (!objResponse.ok) throw new Error(`Earth model request failed: ${objResponse.status}`);
+                        const earthGeometry = parseEarthObj(await objResponse.text());
+                        const earthUniforms = {
+                            uColorMap: { value: colorMap }, uNightMap: { value: nightMap }, uBumpMap: { value: bumpMap },
+                            uSpecMap: { value: specMap }, uCloudsMap: { value: cloudsMap }, uTime: { value: 0 },
+                            uAnimation: { value: 0 }, uLightDirection: { value: new THREE.Vector3(-.55, .4, 1).normalize() }
+                        };
+                        const earthMaterial = new THREE.ShaderMaterial({
+                            uniforms: earthUniforms, side: THREE.DoubleSide,
+                            vertexShader: `
+                                varying vec3 vLocalPosition;
+                                varying vec3 vWorldNormal;
+                                varying vec3 vWorldPosition;
+                                void main() {
+                                    vLocalPosition = position;
+                                    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                                    vWorldPosition = worldPosition.xyz;
+                                    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+                                    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+                                }
+                            `,
+                            fragmentShader: `
+                                uniform sampler2D uColorMap; uniform sampler2D uNightMap; uniform sampler2D uBumpMap;
+                                uniform sampler2D uSpecMap; uniform sampler2D uCloudsMap; uniform float uTime; uniform float uAnimation;
+                                uniform vec3 uLightDirection; varying vec3 vLocalPosition; varying vec3 vWorldNormal; varying vec3 vWorldPosition;
+                                void main() {
+                                    vec3 sphere = normalize(vLocalPosition); float lon = atan(sphere.z, -sphere.x) / 6.2831853 + .5; float lat = asin(sphere.y) / 3.1415926 + .5;
+                                    vec2 uv = vec2(lon, lat); vec3 normal = normalize(vWorldNormal); vec3 lightDirection = normalize(uLightDirection);
+                                    float daylight = smoothstep(-.12, .18, dot(normal, lightDirection)); float bump = texture2D(uBumpMap, uv).r;
+                                    vec3 day = texture2D(uColorMap, uv).rgb * (.72 + .52 * daylight) + bump * .035;
+                                    vec3 night = texture2D(uNightMap, uv).rgb * (1.0 - daylight) * 1.45;
+                                    vec3 cloud = texture2D(uCloudsMap, uv + vec2(uTime * .0012, 0.0)).rgb * .08;
+                                    float specular = pow(max(dot(reflect(-lightDirection, normal), normalize(cameraPosition - vWorldPosition)), 0.0), 24.0) * texture2D(uSpecMap, uv).r * .16;
+                                    gl_FragColor = vec4(day + night + cloud + specular, 1.0);
+                                }
+                            `
+                        });
+                        const mesh = new THREE.Mesh(earthGeometry, earthMaterial);
+                        mesh.scale.setScalar(1.12); mesh.castShadow = true; mesh.receiveShadow = true; globe3d.add(mesh);
+                        window.bondsEarthShader = { material: earthMaterial, uniforms: earthUniforms };
+                        const depthShell = new THREE.Mesh(new THREE.SphereGeometry(1.24, 96, 64), new THREE.MeshPhongMaterial({ color: 0x267da8, transparent: true, opacity: .08, shininess: 28, side: THREE.BackSide }));
+                        globe3d.add(depthShell);
+                        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.29, 64, 48), new THREE.MeshBasicMaterial({ color: 0x71e8ff, transparent: true, opacity: .14, side: THREE.BackSide }));
+                        globe3d.add(atmosphere); addLocationLabels(THREE, globe3d);
+                    } catch (error) {
+                        console.error('Bonds Studio Earth model failed to load', error);
+                        const fallback = new THREE.Mesh(new THREE.SphereGeometry(1.12, 64, 48), new THREE.MeshPhongMaterial({ color: 0x1b6e91, emissive: 0x071b2b, shininess: 14 }));
+                        globe3d.add(fallback); addLocationLabels(THREE, globe3d);
+                    }
+                };
+                addEarthModel();
                 scene.add(new THREE.AmbientLight(0x8edfff, 1.15));
                 scene.add(new THREE.HemisphereLight(0xbbeeff, 0x10233b, .9));
                 const cameraFill = new THREE.PointLight(0x8edfff, .85, 7);
