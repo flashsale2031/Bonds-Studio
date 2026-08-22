@@ -300,8 +300,8 @@
                         <div class="orbit-controls__row"><span>Simulation time</span><output id="orbit-date-output">Now</output><button class="orbit-controls__close" id="orbit-controls-close" type="button" aria-label="Close simulated time menu" title="Close simulated time menu">×</button></div>
                         <input id="orbit-date" type="datetime-local" aria-label="Set simulation date and time" />
                         <div class="orbit-controls__row"><span>Playback</span><select id="orbit-speed" aria-label="Choose orbital playback speed"><option value="1">1 day / second</option><option value="7">7 days / second</option><option value="30">30 days / second</option><option value="365">1 year / second</option></select></div>
-                        <label class="orbit-focus-label" for="scene-zoom">Scene zoom <output id="scene-zoom-output">100%</output></label>
-                        <input id="scene-zoom" type="range" min="0.02" max="2.4" value="1" step="0.01" aria-label="Zoom scene from galaxy view to surface view" />
+                        <label class="orbit-focus-label" for="scene-zoom">Scene zoom <output id="scene-zoom-output">4×</output></label>
+                        <input id="scene-zoom" type="range" min="4" max="20" value="4" step="0.1" aria-label="Zoom scene from 4x to 20x" />
                         <label class="orbit-focus-label" for="body-focus">Center object</label>
                         <select id="body-focus" aria-label="Select a planet or celestial body to center"><option value="Earth">Earth</option><option value="Sun">Sun</option><option value="Moon">Moon</option><option value="Mercury">Mercury</option><option value="Venus">Venus</option><option value="Mars">Mars</option><option value="Jupiter">Jupiter</option><option value="Saturn">Saturn</option><option value="Uranus">Uranus</option><option value="Neptune">Neptune</option></select>
                         <output id="focus-output">Earth centered</output>
@@ -478,9 +478,9 @@
                 window.bondsEarth3d = { view(x, y) { globe3d.rotation.x = y * Math.PI / 180; globe3d.rotation.y = x * Math.PI / 180; } };
                 window.bondsEarthCamera = {
                     setZoom(value) {
-                        const safeZoom = Math.min(1.55, Math.max(.12, value));
+                        const safeZoom = Math.min(5, Math.max(1, value));
                         camera.position.z = 3.15 / Math.sqrt(safeZoom);
-                        camera.fov = 30 + (1 - Math.min(1, safeZoom)) * 35;
+                        camera.fov = 30 + (5 - safeZoom) * 2.5;
                         camera.updateProjectionMatrix();
                         galaxyStars.rotation.y += .00008;
                     }
@@ -672,7 +672,7 @@
                     const verticalScale = 1 + Math.abs(rotationX) / 90 * .30;
                     const screenScale = (.90 + Math.min(1.55, zoom) * .10) * verticalScale;
                     globe.style.setProperty('--earth-scale', screenScale.toFixed(3));
-                    stage.classList.toggle('earth-stage--galaxy-view', zoom < .38);
+                    stage.classList.toggle('earth-stage--galaxy-view', zoom <= 1.2);
                     window.bondsEarthCamera?.setZoom(zoom);
                     window.bondsEarth3d?.view(rotationY, rotationX);
                     window.bondsSolar3d?.view(rotationY, rotationX);
@@ -694,7 +694,7 @@
             window.bondsEarthView = { centerLocation(lat, lon) { rotationX = clamp(-lat * .42, -90, 90); rotationY = lon; render(); } };
             const zoomInput = document.getElementById('scene-zoom');
             const zoomOutput = document.getElementById('scene-zoom-output');
-            const updateZoomControl = () => { if (zoomInput) zoomInput.value = String(zoom); if (zoomOutput) zoomOutput.textContent = `${Math.round(zoom * 100)}%`; };
+            const updateZoomControl = () => { if (zoomInput) zoomInput.value = String(zoom * 4); if (zoomOutput) zoomOutput.textContent = `${(zoom * 4).toFixed(1).replace(/\.0$/, '')}×`; };
             const resetView = () => { rotationX = 0; rotationY = 0; zoom = 1; updateZoomControl(); render(); };
             exploreButton.addEventListener('click', () => setExploreView(!exploreView));
             resetViewButton.addEventListener('click', () => { resetView(); setExploreView(false); });
@@ -755,7 +755,7 @@
                 activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
                 if (activePointers.size === 2) {
                     const nextDistance = pointerDistance();
-                    if (pinchDistance)                     zoom = clamp(zoom * (nextDistance / pinchDistance), .02, 2.4);
+                    if (pinchDistance)                     zoom = clamp(zoom * (nextDistance / pinchDistance), 1, 5);
                     pinchDistance = nextDistance;
                     pinchCenter = pointerMidpoint();
                     render();
@@ -783,10 +783,10 @@
             stage.addEventListener('pointercancel', releasePointer);
             stage.addEventListener('wheel', (event) => {
                 event.preventDefault();
-                zoom = clamp(zoom - event.deltaY * .0012, .02, 2.4);
+                zoom = clamp(zoom - event.deltaY * .0012, 1, 5);
                 render();
             }, { passive: false });
-            zoomInput?.addEventListener('input', () => { zoom = clamp(Number(zoomInput.value), .02, 2.4); render(); });
+            zoomInput?.addEventListener('input', () => { zoom = clamp(Number(zoomInput.value) / 4, 1, 5); render(); });
         })();
     </script>
     <script>
