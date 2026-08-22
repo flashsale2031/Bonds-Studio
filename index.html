@@ -579,13 +579,16 @@
                                 uniform vec3 uLightDirection; varying vec3 vLocalPosition; varying vec3 vWorldNormal; varying vec3 vWorldPosition;
                                 void main() {
                                     vec3 sphere = normalize(vLocalPosition); float lon = atan(sphere.z, -sphere.x) / 6.2831853 + .5; float lat = asin(sphere.y) / 3.1415926 + .5;
-                                    vec2 uv = vec2(lon, lat); vec3 normal = normalize(vWorldNormal); vec3 lightDirection = normalize(uLightDirection);
-                                    float daylight = smoothstep(-.12, .18, dot(normal, lightDirection)); float bump = texture2D(uBumpMap, uv).r;
-                                    vec3 day = texture2D(uColorMap, uv).rgb * (.38 + .48 * daylight) + bump * .045;
-                                    vec3 night = texture2D(uNightMap, uv).rgb * (1.0 - daylight) * .92;
-                                    vec3 cloud = texture2D(uCloudsMap, uv + vec2(uTime * .0012, 0.0)).rgb * .045;
-                                    float specular = pow(max(dot(reflect(-lightDirection, normal), normalize(cameraPosition - vWorldPosition)), 0.0), 24.0) * texture2D(uSpecMap, uv).r * .08;
-                                    vec3 finalColor = day + night + cloud + specular;
+                                    vec2 uv = vec2(lon, lat); vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+                                    vec3 normal = faceforward(normalize(vWorldNormal), viewDirection, normalize(vWorldNormal)); vec3 lightDirection = normalize(uLightDirection);
+                                    float daylight = smoothstep(-.35, .42, dot(normal, lightDirection)); float bump = texture2D(uBumpMap, uv).r;
+                                    vec3 mapColor = texture2D(uColorMap, uv).rgb;
+                                    vec3 day = mapColor * (.82 + .62 * daylight) + bump * .08;
+                                    vec3 night = texture2D(uNightMap, uv).rgb * (1.0 - daylight) * .42;
+                                    vec3 cloud = texture2D(uCloudsMap, uv + vec2(uTime * .0012, 0.0)).rgb * (.035 + .045 * daylight);
+                                    float specular = pow(max(dot(reflect(-lightDirection, normal), viewDirection), 0.0), 24.0) * texture2D(uSpecMap, uv).r * .10;
+                                    vec3 finalColor = day + night + cloud + specular + vec3(.035, .06, .085);
+                                    finalColor = max(finalColor, vec3(.045, .06, .075));
                                     finalColor = finalColor / (vec3(1.0) + finalColor);
                                     gl_FragColor = vec4(finalColor, 1.0);
                                 }
