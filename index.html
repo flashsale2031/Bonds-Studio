@@ -483,6 +483,13 @@
                         camera.fov = 30 + (4 - safeZoom) * 3.2;
                         camera.updateProjectionMatrix();
                         galaxyStars.rotation.y += .00008;
+                    },
+                    setElevation(value) {
+                        const distance = Math.max(.8, camera.position.length());
+                        const elevation = Math.max(-88, Math.min(88, value)) * Math.PI / 180;
+                        camera.position.y = Math.sin(elevation) * distance;
+                        camera.position.z = Math.cos(elevation) * distance;
+                        camera.lookAt(0, 0, 0);
                     }
                 };
                 const calculateSphereExtrusionLayers = (radius, numLayers) => {
@@ -674,8 +681,9 @@
                     globe.style.setProperty('--earth-scale', screenScale.toFixed(3));
                     stage.classList.toggle('earth-stage--galaxy-view', zoom <= .55);
                     window.bondsEarthCamera?.setZoom(zoom);
-                    window.bondsEarth3d?.view(rotationY, rotationX);
-                    window.bondsSolar3d?.view(rotationY, rotationX);
+                    window.bondsEarthCamera?.setElevation(rotationX);
+                    window.bondsEarth3d?.view(rotationY, 0);
+                    window.bondsSolar3d?.view(rotationY, 0);
                     if (window.bondsEarthShader) { window.bondsEarthShader.uniforms.uAnimation.value = rotationY * Math.PI / 180 + rotationX * .015; }
                     window.bondsLocalMap?.setZoom(zoom);
                     window.bondsCountryPins?.setVisible(zoom <= 1.5);
