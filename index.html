@@ -102,7 +102,7 @@
         .button--primary { border-color: transparent; color: #06111b; background: var(--cyan); font-weight: 800; }
         .button--primary:hover, .button--primary:focus-visible { border-color: transparent; background: #b7f3ff; }
 
-        .earth-stage { position: relative; width: 100%; min-height: 720px; overflow: visible; perspective: 1400px; isolation: isolate; touch-action: none; }
+        .earth-stage { position: relative; width: 100%; min-height: 720px; overflow: visible; perspective: 1400px; isolation: isolate; touch-action: none; overscroll-behavior: contain; }
         .space-depth { position: absolute; inset: -7% -12%; z-index: -2; overflow: hidden; border: 1px solid rgba(170,214,235,.12); border-radius: 32px; background: radial-gradient(circle at 54% 46%, rgba(20,90,130,.16), transparent 31%), radial-gradient(circle at 23% 78%, rgba(100,66,160,.14), transparent 24%), linear-gradient(145deg, rgba(3,12,22,.84), rgba(5,20,36,.5)); box-shadow: inset 0 0 90px rgba(0,0,0,.36), 0 24px 80px rgba(0,0,0,.18); }
         .space-depth::before, .space-depth::after { position: absolute; inset: 0; content: ""; pointer-events: none; }
         .space-depth::before { opacity: .78; background-image: radial-gradient(circle, rgba(255,255,255,.95) 0 1px, transparent 1.7px), radial-gradient(circle, rgba(255,255,255,.78) 0 .7px, transparent 1.35px), radial-gradient(circle, rgba(117,230,255,.82) 0 1px, transparent 1.6px), radial-gradient(circle, rgba(181,160,255,.82) 0 .8px, transparent 1.55px), radial-gradient(circle, rgba(255,226,160,.7) 0 .8px, transparent 1.5px), radial-gradient(circle, rgba(255,255,255,.52) 0 .55px, transparent 1.15px); background-position: 11% 23%, 68% 31%, 35% 78%, 84% 76%, 57% 12%, 23% 57%; background-size: 137px 113px, 181px 157px, 229px 191px, 277px 239px, 319px 283px, 97px 89px; animation: star-drift 38s linear infinite; }
@@ -309,7 +309,7 @@
                         <button id="orbit-reset" type="button">Reset 10-year process</button>
                         <button id="view-explore" type="button" aria-pressed="false">Explore view</button>
                         <button id="view-reset" type="button">Reset view</button>
-                        <span class="view-hint">Drag or use arrow keys to look around Earth; wheel and pinch zoom from surface detail to galaxy view.</span>
+                        <span class="view-hint">Swipe left/right to orbit; swipe up/down to tilt above or beneath the world. Use two fingers or the Scene zoom slider to frame the system.</span>
                         <output id="orbit-calibration-output">Calibrated: prograde / Keplerian</output>
                         <output id="orbit-offline-output">Offline timeline ready</output>
                     </div>
@@ -763,7 +763,7 @@
                 }
                 if (!dragging || event.pointerId !== activePointer) return;
                 rotationY += (event.clientX - previous.x) * .52;
-                rotationX = clamp(rotationX - (event.clientY - previous.y) * .46, -90, 90);
+                rotationX = clamp(rotationX - (event.clientY - previous.y) * .62, -88, 88);
                 lastX = event.clientX;
                 lastY = event.clientY;
                 render();
