@@ -583,12 +583,13 @@
                                     vec3 normal = faceforward(normalize(vWorldNormal), viewDirection, normalize(vWorldNormal)); vec3 lightDirection = normalize(uLightDirection);
                                     float daylight = smoothstep(-.35, .42, dot(normal, lightDirection)); float bump = texture2D(uBumpMap, uv).r;
                                     vec3 mapColor = texture2D(uColorMap, uv).rgb;
-                                    vec3 day = mapColor * (.82 + .62 * daylight) + bump * .08;
-                                    vec3 night = texture2D(uNightMap, uv).rgb * (1.0 - daylight) * .42;
-                                    vec3 cloud = texture2D(uCloudsMap, uv + vec2(uTime * .0012, 0.0)).rgb * (.035 + .045 * daylight);
-                                    float specular = pow(max(dot(reflect(-lightDirection, normal), viewDirection), 0.0), 24.0) * texture2D(uSpecMap, uv).r * .10;
-                                    vec3 finalColor = day + night + cloud + specular + vec3(.035, .06, .085);
-                                    finalColor = max(finalColor, vec3(.045, .06, .075));
+                                    const float illumination = 0.50;
+                                    vec3 day = mapColor * (illumination * (.62 + .58 * daylight));
+                                    vec3 night = texture2D(uNightMap, uv).rgb * (1.0 - daylight) * illumination * .34;
+                                    vec3 cloud = texture2D(uCloudsMap, uv + vec2(uTime * .0012, 0.0)).rgb * illumination * (.025 + .035 * daylight);
+                                    float specular = pow(max(dot(reflect(-lightDirection, normal), viewDirection), 0.0), 24.0) * texture2D(uSpecMap, uv).r * illumination * .06;
+                                    vec3 finalColor = day + night + cloud + specular + vec3(.018, .03, .045);
+                                    finalColor = max(finalColor, vec3(.028, .04, .055));
                                     finalColor = finalColor / (vec3(1.0) + finalColor);
                                     gl_FragColor = vec4(finalColor, 1.0);
                                 }
