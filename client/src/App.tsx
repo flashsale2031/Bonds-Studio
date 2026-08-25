@@ -45,21 +45,22 @@ const creativeProjects = [
 type LedgerProject = { id: string; name: string; workflow: string; reviewed: boolean; connected: boolean; entryActive: boolean };
 
 const initialLedgerProjects: LedgerProject[] = [
-  { id: "survey-research", name: "Survey & research panels", workflow: "TopSurveys · research account review", reviewed: false, connected: false, entryActive: false },
-  { id: "cashback-rewards", name: "Cashback & rewards", workflow: "InboxDollars · reward balance entry", reviewed: true, connected: true, entryActive: false },
+  { id: "topsurveys", name: "TopSurveys", workflow: "Research account review", reviewed: false, connected: false, entryActive: false },
+  { id: "fivesurveys", name: "Five Surveys", workflow: "Survey reward entry", reviewed: true, connected: true, entryActive: false },
   { id: "swagbucks", name: "Swagbucks", workflow: "Reward balance entry", reviewed: false, connected: false, entryActive: false },
-  { id: "receipt-microtask", name: "Receipt & microtask work", workflow: "Receipt reconciliation", reviewed: false, connected: false, entryActive: false },
-  { id: "freelance-contract", name: "Freelance & contract income", workflow: "Invoice and payment record", reviewed: false, connected: false, entryActive: false },
-  { id: "creator-affiliate", name: "Creator & affiliate revenue", workflow: "Payout review", reviewed: true, connected: true, entryActive: false },
-  { id: "bank-cash", name: "Bank & cash accounts", workflow: "Cash position review", reviewed: false, connected: false, entryActive: false },
-  { id: "savings-interest", name: "Savings & interest accounts", workflow: "Interest entry", reviewed: false, connected: false, entryActive: false },
-  { id: "credit-debt", name: "Credit & debt accounts", workflow: "Statement balance review", reviewed: false, connected: false, entryActive: false },
-  { id: "investments", name: "Investments & brokerage", workflow: "Holding record", reviewed: true, connected: true, entryActive: false },
-  { id: "bills-subscriptions", name: "Bills & subscriptions", workflow: "Recurring charge entry", reviewed: false, connected: false, entryActive: false },
-  { id: "reimbursements", name: "Reimbursements & benefits", workflow: "Claim reconciliation", reviewed: false, connected: false, entryActive: false },
-  { id: "tax-compliance", name: "Tax & compliance records", workflow: "Filing evidence review", reviewed: false, connected: false, entryActive: false },
-  { id: "digital-wallets", name: "Digital wallets & payments", workflow: "Transaction match", reviewed: true, connected: true, entryActive: false },
-  { id: "general-journal", name: "General ledger & journals", workflow: "Manual journal entry", reviewed: false, connected: false, entryActive: false },
+  { id: "inboxdollars", name: "InboxDollars", workflow: "Cash reward reconciliation", reviewed: false, connected: false, entryActive: false },
+  { id: "survey-junkie", name: "Survey Junkie", workflow: "Survey payout review", reviewed: false, connected: false, entryActive: false },
+  { id: "branded-surveys", name: "Branded Surveys", workflow: "Points balance entry", reviewed: true, connected: true, entryActive: false },
+  { id: "prolific", name: "Prolific", workflow: "Study payment reconciliation", reviewed: false, connected: false, entryActive: false },
+  { id: "usertesting", name: "UserTesting", workflow: "Test payment record", reviewed: false, connected: false, entryActive: false },
+  { id: "mechanical-turk", name: "Amazon Mechanical Turk", workflow: "Task payout entry", reviewed: false, connected: false, entryActive: false },
+  { id: "respondent", name: "Respondent", workflow: "Research incentive review", reviewed: false, connected: false, entryActive: false },
+  { id: "fiverr", name: "Fiverr", workflow: "Freelance payout record", reviewed: true, connected: true, entryActive: false },
+  { id: "upwork", name: "Upwork", workflow: "Contract payment entry", reviewed: false, connected: false, entryActive: false },
+  { id: "etsy", name: "Etsy", workflow: "Shop payout reconciliation", reviewed: false, connected: false, entryActive: false },
+  { id: "ebay", name: "eBay", workflow: "Marketplace settlement review", reviewed: false, connected: false, entryActive: false },
+  { id: "paypal", name: "PayPal", workflow: "Wallet transaction match", reviewed: true, connected: true, entryActive: false },
+  { id: "venmo", name: "Venmo", workflow: "Peer payment entry", reviewed: false, connected: false, entryActive: false },
 ];
 
 function LedgerMark({ compact = false }: { compact?: boolean }) {
@@ -216,7 +217,7 @@ export default function App() {
         </section>
 
         <section className="module-section ledger-section" id="ledger-projects" aria-labelledby="ledger-title"><span className="section-index" aria-hidden="true">04</span>
-          <div className="section-heading"><div><span className="eyebrow"><CircleDot size={15} /> Ledger Projects</span><h2 id="ledger-title">Keep every ledger <em>type in view.</em></h2></div><p>A complete catalog of account, income, payment, and compliance channels—each with dedicated entry, review, and session controls.</p></div>
+          <div className="section-heading"><div><span className="eyebrow"><CircleDot size={15} /> Ledger Projects</span><h2 id="ledger-title">Keep every ledger <em>platform in view.</em></h2></div><p>A named platform list for rewards, research, freelance, marketplace, and payment channels—each with dedicated entry, review, and session controls.</p></div>
           <div className="ledger-shell">
             <div className="ledger-summary"><div><span>Projects</span><b>{ledgerProjects.length.toString().padStart(2, "0")}</b></div><div><span>Reviewed</span><b>{ledgerProjects.filter((project) => project.reviewed).length.toString().padStart(2, "0")}</b></div><div><span>Sessions</span><b>{ledgerProjects.filter((project) => project.connected).length.toString().padStart(2, "0")}</b></div><p><ShieldCheck size={17} />Review holds remain visible when evidence is missing.</p></div>
             <div className="ledger-list">{ledgerProjects.map((project, index) => <article className={`ledger-row ${project.entryActive ? "is-entry-running" : ""}`} key={project.id}><span className="ledger-index">{(index + 1).toString().padStart(2, "0")}</span><div className="ledger-project-name"><h3>{project.name}</h3><p>{project.workflow} · {project.entryActive ? "Entry running in platform channel" : project.connected ? "Browser session connected" : "Connect an account to start"}</p></div><span className={`ledger-state ${project.reviewed ? "is-reviewed" : ""}`}><i />{project.reviewed ? "Reviewed" : "Pending"}</span><div className="ledger-actions"><button onClick={() => toggleConnection(project.id)}>{project.connected ? "Disconnect" : "Connect"}</button><button className="entry-start" disabled={project.entryActive} onClick={() => startLedgerEntry(project.id)}><Play size={13} />Start Entry</button><button className="entry-stop" disabled={!project.entryActive} onClick={() => stopLedgerEntry(project.id)}><Pause size={13} />Stop Entry</button><button className="review-action" onClick={() => toggleLedgerReview(project.id)}>{project.reviewed ? "Reopen" : "Review"}<ArrowUpRight size={14} /></button></div></article>)}</div>
