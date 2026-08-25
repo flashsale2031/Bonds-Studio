@@ -1,35 +1,50 @@
-# Bonds Studio
+# Bonds Studio — Web Edition v3.7
 
-Bonds Studio is an interactive Earth-and-orbit creative systems experience. The page now includes **Bonds Agent**, a browser-safe task orchestrator for multi-step investigations and issue resolution.
+A GitHub-ready full-stack web edition of Bonds Studio with the unified ledger platform, multi-account browser identities, adaptive ledger AI, extreme-caution safeguards, and domain/DNS management UI.
 
-## Bonds Agent
+## Run locally
 
-The assistant follows an **understand → plan → execute → verify → checkpoint** loop. It can inspect the current page, run health diagnostics, control the orbital simulation, open a mapped location, and persist the latest workflow state in `localStorage`. The panel is available through the **Open Bonds Agent** launcher in the lower-right corner of the page.
-
-The built-in tools are intentionally safe for a static site: they inspect page state and interact with existing UI controls rather than executing arbitrary code. Tool results are shown as evidence in the assistant feed, while the checklist communicates progress for larger tasks.
-
-| Capability | Example request | Result |
-|---|---|---|
-| Workspace inspection | “Inspect the workspace” | Reports module, WebGL, map, and offline capabilities. |
-| Issue resolution | “Diagnose the workspace and report any issues” | Runs health checks and identifies failed subsystems. |
-| Orbital control | “Focus the orbital view on Mars” | Updates the existing orbital focus control. |
-| Map exploration | “Open London on the map” | Selects the matching location in the location explorer. |
-| Checkpointing | Any completed workflow | Saves the command, evidence, and timestamp locally. |
-
-## Connecting a larger model
-
-The frontend supports an optional server-side agent endpoint. Before loading the page, configure `window.BONDS_ASSISTANT_ENDPOINT` to a same-origin or appropriately CORS-enabled `POST` endpoint. The endpoint receives a JSON payload containing the user command and the current checkpoint state. If the endpoint is unavailable, the assistant continues using its local tools and clearly reports that it fell back to local execution.
-
-A production endpoint should validate input, enforce authentication and rate limits, keep tool permissions allow-listed, stream progress where appropriate, and require confirmation before any irreversible external action. The current static implementation deliberately does not perform posting, payment, account changes, arbitrary shell execution, or unrestricted network actions.
-
-## Local verification
-
-Run the following checks from the repository root:
+Requirements: Node.js 20+ and pnpm 10+.
 
 ```bash
-node --check assistant.js
-git diff --check
-python3 -m http.server 4173
+pnpm install
+cp .env.example .env
+pnpm run dev
 ```
 
-Then open `http://127.0.0.1:4173/` and try the built-in shortcuts **Diagnose workspace**, **Focus Mars**, and **Open London**.
+Open `http://localhost:3000`.
+
+## Production
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run check
+pnpm run test
+pnpm run build
+pnpm start
+```
+
+The repository includes a Dockerfile and GitHub Actions CI workflow.
+
+## GitHub
+
+Create a repository, then:
+
+```bash
+git init
+git add .
+git commit -m "Bonds Studio Web v3.7"
+git branch -M main
+git remote add origin <YOUR_GITHUB_REPOSITORY_URL>
+git push -u origin main
+```
+
+GitHub Pages is not the full deployment target because Bonds Studio includes a Node/Express backend, database access, authentication, and tRPC APIs. Host the full application on a Node-capable service while using GitHub as the source repository. The included CI workflow verifies the complete application on every push.
+
+## Ledger AI safety
+
+The ledger assistant uses adaptive task familiarity and experience retrieval, but learned experience never overrides current evidence or safety rules. Ambiguous, attention-check, subjective, destructive, sensitive, or unverifiable tasks can be paused for human review instead of guessed.
+
+## Browser sessions
+
+Each ledger account has its own browser identity metadata and retained session state. A normal web browser cannot programmatically control another browser's native profile or bypass third-party cross-origin restrictions. Native browser automation should use a separately authorized extension/desktop bridge.
