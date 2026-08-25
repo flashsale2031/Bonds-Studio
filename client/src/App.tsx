@@ -12,8 +12,10 @@ import {
   Eye,
   Globe2,
   Layers3,
+  Maximize2,
   Menu,
   Mic,
+  Minus,
   Orbit,
   Pause,
   Play,
@@ -52,6 +54,8 @@ const creativeProjects = [
 ];
 
 type LedgerProject = { id: string; name: string; workflow: string; reviewed: boolean; connected: boolean; entryActive: boolean };
+type WorkspaceAccount = { id: string; label: string; connected: boolean };
+type AccountWorkspace = { platformId: string; platformName: string; browserType: string; accounts: WorkspaceAccount[]; activeAccountId: string; expanded: boolean };
 
 const initialLedgerProjects: LedgerProject[] = [
   { id: "topsurveys", name: "TopSurveys", workflow: "Research account review", reviewed: false, connected: false, entryActive: false },
@@ -93,6 +97,9 @@ export default function App() {
   const [ledgerName, setLedgerName] = useState("");
   const [notice, setNotice] = useState("Orbital field ready. Earth centered.");
   const [focusIndex, setFocusIndex] = useState(0);
+  const [profileVisible, setProfileVisible] = useState(true);
+  const [workspace, setWorkspace] = useState<AccountWorkspace | null>(null);
+  const [minimizedWorkspace, setMinimizedWorkspace] = useState<AccountWorkspace | null>(null);
   const focusedRegion = simulatedFocusProfiles[focusIndex];
 
   const setActivity = (message: string) => setNotice(message);
@@ -131,15 +138,51 @@ export default function App() {
     setActivity("Ledger review state updated.");
   }
 
-  function toggleConnection(id: string) {
-    setLedgerProjects((projects) => projects.map((project) => project.id === id ? { ...project, connected: !project.connected } : project));
-    setActivity("Browser session state updated locally.");
+  function openWorkspace(project: LedgerProject) {
+    const existing = workspace?.platformId === project.id ? workspace : minimizedWorkspace?.platformId === project.id ? minimizedWorkspace : null;
+    const nextWorkspace = existing || {
+      platformId: project.id,
+      platformName: project.name,
+      browserType: "Dedicated workspace",
+      accounts: [{ id: `${project.id}-account-1`, label: "Account 1", connected: project.connected }],
+      activeAccountId: `${project.id}-account-1`,
+      expanded: false,
+    };
+    setWorkspace(nextWorkspace);
+    setMinimizedWorkspace(null);
+    setActivity(`${project.name} local account workspace opened. No third-party login is performed.`);
+  }
+
+  function minimizeWorkspace() {
+    if (!workspace) return;
+    setMinimizedWorkspace(workspace);
+    setWorkspace(null);
+    setActivity(`${workspace.platformName} workspace minimized; local account state remains available in this page session.`);
+  }
+
+  function addWorkspaceAccount() {
+    if (!workspace) return;
+    const nextNumber = workspace.accounts.length + 1;
+    const account = { id: `${workspace.platformId}-account-${nextNumber}`, label: `Account ${nextNumber}`, connected: false };
+    setWorkspace({ ...workspace, accounts: [...workspace.accounts, account], activeAccountId: account.id });
+    setActivity(`${workspace.platformName} account slot ${nextNumber} added to the local workspace.`);
+  }
+
+  function connectWorkspaceAccount() {
+    if (!workspace) return;
+    const activeAccount = workspace.accounts.find((account) => account.id === workspace.activeAccountId);
+    const nextConnected = !activeAccount?.connected;
+    const accounts = workspace.accounts.map((account) => account.id === workspace.activeAccountId ? { ...account, connected: nextConnected } : account);
+    setWorkspace({ ...workspace, accounts });
+    setLedgerProjects((projects) => projects.map((project) => project.id === workspace.platformId ? { ...project, connected: accounts.some((account) => account.connected) } : project));
+    setActivity(`${workspace.platformName} ${activeAccount?.label || "account"} is ${nextConnected ? "connected" : "disconnected"} in the local workspace model.`);
   }
 
   function startLedgerEntry(id: string) {
     const project = ledgerProjects.find((item) => item.id === id);
     setLedgerProjects((projects) => projects.map((item) => item.id === id ? { ...item, connected: true, entryActive: true } : item));
-    setActivity(`${project?.name || "Platform"} entry started. The platform channel is now active.`);
+    if (project) openWorkspace({ ...project, connected: true });
+    setActivity(`${project?.name || "Platform"} data-entry task started. Its local account workspace is available for this session.`);
   }
 
   function stopLedgerEntry(id: string) {
@@ -175,13 +218,14 @@ export default function App() {
           </div>
 
           <div className="orbital-copy">
-            <section className="location-renderer" aria-labelledby="orbit-title" aria-live="polite" key={focusedRegion.id}>
+            {profileVisible && <section className="location-renderer" aria-labelledby="orbit-title" aria-live="polite" key={focusedRegion.id}>
               <div className="location-renderer-head"><span className="sensor-dot" />Viewport sensor <b>Focus {String(focusIndex + 1).padStart(2, "0")} / {String(simulatedFocusProfiles.length).padStart(2, "0")} · simulated</b></div>
+              <button className="sensor-panel-close" onClick={() => { setProfileVisible(false); setActivity("Viewport profile hidden. The red sensor remains active over Earth."); }} aria-label="Close geographic profile"><X size={14} /></button>
               <h1 id="orbit-title">{focusedRegion.name}<em>{focusedRegion.context} · {focusedRegion.coordinates}</em></h1>
               <dl className="location-detail-grid">
                 {focusedRegion.details.map((detail) => <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
               </dl>
-            </section>
+            </section>}
           </div>
 
           <div className="earth-stage" aria-label={`Interactive Earth orbital visualization. Fixed viewport sensor focused on ${focusedRegion.name}.`}>
@@ -242,13 +286,19 @@ export default function App() {
           <div className="section-heading"><div><span className="eyebrow"><CircleDot size={15} /> Ledger Projects</span><h2 id="ledger-title">Keep every ledger <em>platform in view.</em></h2></div><p>A named platform list for rewards, research, freelance, marketplace, and payment channels—each with dedicated entry, review, and session controls.</p></div>
           <div className="ledger-shell">
             <div className="ledger-summary"><div><span>Projects</span><b>{ledgerProjects.length.toString().padStart(2, "0")}</b></div><div><span>Reviewed</span><b>{ledgerProjects.filter((project) => project.reviewed).length.toString().padStart(2, "0")}</b></div><div><span>Sessions</span><b>{ledgerProjects.filter((project) => project.connected).length.toString().padStart(2, "0")}</b></div><p><ShieldCheck size={17} />Review holds remain visible when evidence is missing.</p></div>
-            <div className="ledger-list">{ledgerProjects.map((project, index) => <article className={`ledger-row ${project.entryActive ? "is-entry-running" : ""}`} key={project.id}><span className="ledger-index">{(index + 1).toString().padStart(2, "0")}</span><div className="ledger-project-name"><h3>{project.name}</h3><p>{project.workflow} · {project.entryActive ? "Entry running in platform channel" : project.connected ? "Browser session connected" : "Connect an account to start"}</p></div><span className={`ledger-state ${project.reviewed ? "is-reviewed" : ""}`}><i />{project.reviewed ? "Reviewed" : "Pending"}</span><div className="ledger-actions"><button onClick={() => toggleConnection(project.id)}>{project.connected ? "Disconnect" : "Connect"}</button><button className="entry-start" disabled={project.entryActive} onClick={() => startLedgerEntry(project.id)}><Play size={13} />Start Entry</button><button className="entry-stop" disabled={!project.entryActive} onClick={() => stopLedgerEntry(project.id)}><Pause size={13} />Stop Entry</button><button className="review-action" onClick={() => toggleLedgerReview(project.id)}>{project.reviewed ? "Reopen" : "Review"}<ArrowUpRight size={14} /></button></div></article>)}</div>
+            <div className="ledger-list">{ledgerProjects.map((project, index) => <article className={`ledger-row ${project.entryActive ? "is-entry-running" : ""}`} key={project.id}><span className="ledger-index">{(index + 1).toString().padStart(2, "0")}</span><div className="ledger-project-name"><h3>{project.name}</h3><p>{project.workflow} · {project.entryActive ? "Data-entry task running" : project.connected ? "Local account connected" : "Open an account workspace to connect"}</p></div><span className={`ledger-state ${project.reviewed ? "is-reviewed" : ""}`}><i />{project.reviewed ? "Reviewed" : "Pending"}</span><div className="ledger-actions"><button className={project.connected ? "is-connected" : ""} onClick={() => openWorkspace(project)}>{project.connected ? "Connected" : "Connect"}</button><button className="entry-start" disabled={project.entryActive} onClick={() => startLedgerEntry(project.id)}><Play size={13} />Start Entry</button><button className="entry-stop" disabled={!project.entryActive} onClick={() => stopLedgerEntry(project.id)}><Pause size={13} />Stop Entry</button><button className="review-action" onClick={() => toggleLedgerReview(project.id)}>{project.reviewed ? "Reopen" : "Review"}<ArrowUpRight size={14} /></button></div></article>)}</div>
             <form className="ledger-add" onSubmit={addLedgerProject}><label htmlFor="ledger-name">Add ledger project</label><div><input id="ledger-name" value={ledgerName} onChange={(event) => setLedgerName(event.target.value)} placeholder="Platform or account name" /><button type="submit"><Plus size={16} />Add</button></div></form>
           </div>
         </section>
 
         <section className="notice-bar" aria-live="polite"><span className="signal-dot" />{notice}<button onClick={() => setActivity("Studio status cleared. Ready for the next action.")}>Clear</button></section>
       </main>
+
+      {workspace && <aside className={`account-workspace-window ${workspace.expanded ? "is-expanded" : ""}`} aria-label={`${workspace.platformName} account workspace`}>
+        <header className="workspace-window-head"><div><span className="sensor-dot" />Local account workspace</div><div className="workspace-window-controls"><button onClick={() => setWorkspace({ ...workspace, expanded: !workspace.expanded })} aria-label={workspace.expanded ? "Reduce account workspace" : "Expand account workspace"}><Maximize2 size={14} /></button><button onClick={minimizeWorkspace} aria-label="Minimize account workspace"><Minus size={15} /></button><button onClick={minimizeWorkspace} aria-label="Close and preserve account workspace"><X size={14} /></button></div></header>
+        <div className="workspace-window-body"><div className="workspace-platform-line"><strong>{workspace.platformName}</strong><span>Platform-specific workspace</span></div><div className="workspace-account-tabs" role="tablist" aria-label={`${workspace.platformName} accounts`}>{workspace.accounts.map((account) => <button key={account.id} className={workspace.activeAccountId === account.id ? "is-active" : ""} onClick={() => setWorkspace({ ...workspace, activeAccountId: account.id })}>{account.label}<i className={account.connected ? "is-connected" : ""} /></button>)}<button className="add-account-button" onClick={addWorkspaceAccount}>+ Add another</button></div><label className="workspace-browser-type">Browser type<select value={workspace.browserType} onChange={(event) => setWorkspace({ ...workspace, browserType: event.target.value })}><option>Dedicated workspace</option><option>Isolated workspace</option><option>Read-only workspace</option></select></label><div className="workspace-browser-surface"><span>{workspace.platformName} · {workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.label}</span><strong>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Ready to connect"}</strong><p>Local session workspace for this platform and account. Third-party sign-in, browser automation, and credential handling are not enabled.</p><button className={workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "workspace-connect is-connected" : "workspace-connect"} onClick={connectWorkspaceAccount}>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Mark connected"}</button></div></div>
+      </aside>}
+      {minimizedWorkspace && <button className="workspace-minimized-dock" onClick={() => { setWorkspace(minimizedWorkspace); setMinimizedWorkspace(null); }}><span className="sensor-dot" />{minimizedWorkspace.platformName} · resume session <Maximize2 size={14} /></button>}
 
       <footer className="site-footer"><BrandIdentity footer /><p>Bonds Studio · orbit, make, and keep a record.</p><a href="#orbit">Back to orbit <ArrowUpRight size={14} /></a></footer>
     </div>
