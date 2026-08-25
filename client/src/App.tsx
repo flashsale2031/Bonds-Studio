@@ -1,4 +1,4 @@
-/** Design: Orbital Studio — the supplied live mobile reference is the ground truth: dark cosmic surfaces, a visible Earth system, cyan/mint signals, and operational rounded panels. */
+/** Design: Orbital Studio — retain the existing Earth system intact; this file changes only the adjacent hero copy into a compact location-description renderer. */
 import { FormEvent, useState } from "react";
 import {
   ArrowUpRight,
@@ -34,6 +34,21 @@ const navLinks = [
   { label: "Creative", href: "#creative-projects" },
   { label: "Ledger", href: "#ledger-projects" },
 ];
+
+const focusedRegion = {
+  name: "New York",
+  context: "United States · Earth-focused region",
+  status: "Profile view · non-live",
+  details: [
+    { label: "Population", value: "8.26M est." },
+    { label: "Environmental grade", value: "B+ · monitored" },
+    { label: "Residential quantity", value: "3.4M dwellings" },
+    { label: "Business quantity", value: "240K establishments" },
+    { label: "Annual financial award", value: "Not configured" },
+    { label: "Performance grade", value: "A− · active" },
+    { label: "Execution grade", value: "A · on track" },
+  ],
+};
 
 const creativeProjects = [
   { id: "document", code: "DO", name: "Document", detail: "Shape a clear record", icon: Layers3, tone: "mint" },
@@ -157,10 +172,13 @@ export default function App() {
           </div>
 
           <div className="orbital-copy">
-            <div className="hero-brand-ledger"><LedgerMark /><span><b>Bonds</b><i>Studio</i><small><em /> Verified orbital ledger</small></span></div>
-            <h1 id="orbit-title">A world to <em>observe,</em><br />shape, and release.</h1>
-            <p>Ground every project in a navigable system. The orbital field keeps the work visible while the studio moves from an early signal to a verified release.</p>
-            <div className="orbital-status"><span className="status-pulse" />{paused ? "Simulation paused" : "Simulation in motion"}<b>{paused ? "hold" : "∞ ideas"}</b></div>
+            <section className="location-renderer" aria-labelledby="orbit-title">
+              <div className="location-renderer-head"><span className="signal-dot" />Location description <b>{focusedRegion.status}</b></div>
+              <h1 id="orbit-title">{focusedRegion.name}<em>{focusedRegion.context}</em></h1>
+              <dl className="location-detail-grid">
+                {focusedRegion.details.map((detail) => <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
+              </dl>
+            </section>
           </div>
 
           <div className="earth-stage" aria-label="Interactive Earth orbital visualization">
