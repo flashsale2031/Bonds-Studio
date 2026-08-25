@@ -1,50 +1,34 @@
-# Bonds Studio — Web Edition v3.7
+# Bonds Studio — Web Edition
 
-A GitHub-ready full-stack web edition of Bonds Studio with the unified ledger platform, multi-account browser identities, adaptive ledger AI, extreme-caution safeguards, and domain/DNS management UI.
+**Bonds Studio** is a browser-ready ledger workspace for structured project records, account evidence, and explicit verification flows. This edition is intentionally static: it keeps the display fast, portable, and suitable for GitHub Pages while preserving the product’s evidence-first design language.
 
 ## Run locally
 
-Requirements: Node.js 20+ and pnpm 10+.
-
-```bash
-pnpm install
-cp .env.example .env
-pnpm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Production
+The project requires Node.js 20 or later and pnpm 10.
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run check
-pnpm run test
-pnpm run build
-pnpm start
+pnpm run dev
 ```
 
-The repository includes a Dockerfile and GitHub Actions CI workflow.
+Open the printed local address in a browser. The app stores no server-side data and does not require environment variables.
 
-## GitHub
-
-Create a repository, then:
+## Validate and build
 
 ```bash
-git init
-git add .
-git commit -m "Bonds Studio Web v3.7"
-git branch -M main
-git remote add origin <YOUR_GITHUB_REPOSITORY_URL>
-git push -u origin main
+pnpm run check
+pnpm run build
+pnpm run preview
 ```
 
-GitHub Pages is not the full deployment target because Bonds Studio includes a Node/Express backend, database access, authentication, and tRPC APIs. Host the full application on a Node-capable service while using GitHub as the source repository. The included CI workflow verifies the complete application on every push.
+The production-ready artifact is written to `dist/`.
 
-## Ledger AI safety
+## GitHub Pages
 
-The ledger assistant uses adaptive task familiarity and experience retrieval, but learned experience never overrides current evidence or safety rules. Ambiguous, attention-check, subjective, destructive, sensitive, or unverifiable tasks can be paused for human review instead of guessed.
+The workflow at `.github/workflows/pages.yml` runs type checking, creates the Vite production build, and publishes only the generated `dist/` artifact. On a repository at `flashsale2031/Bonds-Studio`, the browser app is configured to use the `/Bonds-Studio/` base path under GitHub Pages.
 
-## Browser sessions
+To publish from GitHub, open **Settings → Pages** and select **GitHub Actions** as the deployment source. Every subsequent push to `main` will build and publish the browser experience.
 
-Each ledger account has its own browser identity metadata and retained session state. A normal web browser cannot programmatically control another browser's native profile or bypass third-party cross-origin restrictions. Native browser automation should use a separately authorized extension/desktop bridge.
+## Design direction
+
+The web display follows **The Archivist’s Desk**: contemporary editorial craft with a parchment working surface, register-green navigation, antique-gold verification marks, and evidence-first microcopy. The project uses generated Bonds Studio artwork by external CDN URL so the repository remains lightweight.
