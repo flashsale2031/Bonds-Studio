@@ -47,6 +47,7 @@ type LedgerProject = { id: string; name: string; workflow: string; reviewed: boo
 const initialLedgerProjects: LedgerProject[] = [
   { id: "survey-research", name: "Survey & research panels", workflow: "TopSurveys · research account review", reviewed: false, connected: false, entryActive: false },
   { id: "cashback-rewards", name: "Cashback & rewards", workflow: "InboxDollars · reward balance entry", reviewed: true, connected: true, entryActive: false },
+  { id: "swagbucks", name: "Swagbucks", workflow: "Reward balance entry", reviewed: false, connected: false, entryActive: false },
   { id: "receipt-microtask", name: "Receipt & microtask work", workflow: "Receipt reconciliation", reviewed: false, connected: false, entryActive: false },
   { id: "freelance-contract", name: "Freelance & contract income", workflow: "Invoice and payment record", reviewed: false, connected: false, entryActive: false },
   { id: "creator-affiliate", name: "Creator & affiliate revenue", workflow: "Payout review", reviewed: true, connected: true, entryActive: false },
