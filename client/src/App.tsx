@@ -1,5 +1,5 @@
-/** Design: Orbital Studio — retain the existing Earth system intact; this file changes only the adjacent hero copy into a compact location-description renderer. */
-import { FormEvent, useState } from "react";
+/** Design: Orbital Studio — the Earth remains the centered display object; a fixed red viewport sensor drives the adjacent simulated geographic profile. */
+import { FormEvent, useEffect, useState } from "react";
 import {
   ArrowUpRight,
   BrainCircuit,
@@ -35,20 +35,14 @@ const navLinks = [
   { label: "Ledger", href: "#ledger-projects" },
 ];
 
-const focusedRegion = {
-  name: "New York",
-  context: "United States · Earth-focused region",
-  status: "Profile view · non-live",
-  details: [
-    { label: "Population", value: "8.26M est." },
-    { label: "Environmental grade", value: "B+ · monitored" },
-    { label: "Residential quantity", value: "3.4M dwellings" },
-    { label: "Business quantity", value: "240K establishments" },
-    { label: "Annual financial award", value: "Not configured" },
-    { label: "Performance grade", value: "A− · active" },
-    { label: "Execution grade", value: "A · on track" },
-  ],
-};
+const simulatedFocusProfiles = [
+  { id: "new-york", name: "New York", context: "United States", coordinates: "40.71°N · 74.01°W", details: [{ label: "Population", value: "8.3M · display model" }, { label: "Environmental grade", value: "B+ · scenario" }, { label: "Residential quantity", value: "3.4M · scenario" }, { label: "Business quantity", value: "240K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "A− · scenario" }, { label: "Execution grade", value: "A · scenario" }] },
+  { id: "london", name: "London", context: "United Kingdom", coordinates: "51.51°N · 0.13°W", details: [{ label: "Population", value: "9.0M · display model" }, { label: "Environmental grade", value: "B · scenario" }, { label: "Residential quantity", value: "3.7M · scenario" }, { label: "Business quantity", value: "220K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "A · scenario" }, { label: "Execution grade", value: "A− · scenario" }] },
+  { id: "lagos", name: "Lagos", context: "Nigeria", coordinates: "6.52°N · 3.38°E", details: [{ label: "Population", value: "15.9M · display model" }, { label: "Environmental grade", value: "B− · scenario" }, { label: "Residential quantity", value: "4.2M · scenario" }, { label: "Business quantity", value: "190K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "B+ · scenario" }, { label: "Execution grade", value: "B+ · scenario" }] },
+  { id: "mumbai", name: "Mumbai", context: "India", coordinates: "19.08°N · 72.88°E", details: [{ label: "Population", value: "12.5M · display model" }, { label: "Environmental grade", value: "B · scenario" }, { label: "Residential quantity", value: "4.6M · scenario" }, { label: "Business quantity", value: "260K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "A− · scenario" }, { label: "Execution grade", value: "A− · scenario" }] },
+  { id: "tokyo", name: "Tokyo", context: "Japan", coordinates: "35.68°N · 139.69°E", details: [{ label: "Population", value: "14.0M · display model" }, { label: "Environmental grade", value: "A− · scenario" }, { label: "Residential quantity", value: "7.3M · scenario" }, { label: "Business quantity", value: "390K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "A · scenario" }, { label: "Execution grade", value: "A · scenario" }] },
+  { id: "sao-paulo", name: "São Paulo", context: "Brazil", coordinates: "23.55°S · 46.63°W", details: [{ label: "Population", value: "11.5M · display model" }, { label: "Environmental grade", value: "B+ · scenario" }, { label: "Residential quantity", value: "4.4M · scenario" }, { label: "Business quantity", value: "230K · scenario" }, { label: "Annual financial award", value: "Not configured" }, { label: "Performance grade", value: "A− · scenario" }, { label: "Execution grade", value: "A− · scenario" }] },
+];
 
 const creativeProjects = [
   { id: "document", code: "DO", name: "Document", detail: "Shape a clear record", icon: Layers3, tone: "mint" },
@@ -98,14 +92,23 @@ export default function App() {
   const [ledgerProjects, setLedgerProjects] = useState<LedgerProject[]>(initialLedgerProjects);
   const [ledgerName, setLedgerName] = useState("");
   const [notice, setNotice] = useState("Orbital field ready. Earth centered.");
+  const [focusIndex, setFocusIndex] = useState(0);
+  const focusedRegion = simulatedFocusProfiles[focusIndex];
 
   const setActivity = (message: string) => setNotice(message);
+
+  useEffect(() => {
+    if (paused) return;
+    const focusInterval = window.setInterval(() => setFocusIndex((index) => (index + 1) % simulatedFocusProfiles.length), 3000);
+    return () => window.clearInterval(focusInterval);
+  }, [paused]);
 
   function resetOrbit() {
     setPaused(false);
     setCenterObject("Earth");
     setPlayback("1 day / second");
-    setActivity("Orbit reset. Earth centered with the saved timeline.");
+    setFocusIndex(0);
+    setActivity("Orbit reset. The viewport sensor returned to New York.");
   }
 
   function runAiScan() {
@@ -172,24 +175,25 @@ export default function App() {
           </div>
 
           <div className="orbital-copy">
-            <section className="location-renderer" aria-labelledby="orbit-title">
-              <div className="location-renderer-head"><span className="signal-dot" />Location description <b>{focusedRegion.status}</b></div>
-              <h1 id="orbit-title">{focusedRegion.name}<em>{focusedRegion.context}</em></h1>
+            <section className="location-renderer" aria-labelledby="orbit-title" aria-live="polite" key={focusedRegion.id}>
+              <div className="location-renderer-head"><span className="sensor-dot" />Viewport sensor <b>Focus {String(focusIndex + 1).padStart(2, "0")} / {String(simulatedFocusProfiles.length).padStart(2, "0")} · simulated</b></div>
+              <h1 id="orbit-title">{focusedRegion.name}<em>{focusedRegion.context} · {focusedRegion.coordinates}</em></h1>
               <dl className="location-detail-grid">
                 {focusedRegion.details.map((detail) => <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.value}</dd></div>)}
               </dl>
             </section>
           </div>
 
-          <div className="earth-stage" aria-label="Interactive Earth orbital visualization">
+          <div className="earth-stage" aria-label={`Interactive Earth orbital visualization. Fixed viewport sensor focused on ${focusedRegion.name}.`}>
             <div className="orbit-ring ring-one" />
             <div className="orbit-ring ring-two" />
             <div className="orbit-ring ring-three" />
             <div className={`earth-globe ${paused ? "is-paused" : ""}`} style={{ backgroundImage: `url(${earthTexture})` }}>
               <span className="earth-shine" />
             </div>
+            <div className="sensor-beam" aria-hidden="true"><span className="sensor-target" /></div>
             <span className="moon" />
-            <div className="earth-label"><span>Earth-centered</span><b>Δλ 0.986°/day</b></div>
+            <div className="earth-label"><span>Sensor focus · {focusedRegion.name}</span><b>{focusedRegion.coordinates}</b></div>
           </div>
 
           <section className="orbit-controls" aria-label="Earth simulation controls">
@@ -205,7 +209,7 @@ export default function App() {
             <p className="controls-helper">Drag or use arrow keys to look around Earth; wheel and pinch zoom.</p>
           </section>
 
-          <div className="grounding-panel"><span>Grounding map · street level</span><strong>New York, United States</strong><button onClick={() => setActivity("Street View context prepared for New York, United States.")}>Street View <ArrowUpRight size={14} /></button></div>
+          <div className="grounding-panel"><span>Grounding simulation · sensor focus</span><strong>{focusedRegion.name}, {focusedRegion.context}</strong><button onClick={() => setActivity(`Grounding simulation prepared for ${focusedRegion.name}, ${focusedRegion.context}.`)}>Street View <ArrowUpRight size={14} /></button></div>
         </section>
 
         <section className="studio-loop section-frame">
