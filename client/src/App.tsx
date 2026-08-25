@@ -42,12 +42,12 @@ const creativeProjects = [
   { id: "video", code: "VI", name: "Video", detail: "Sequence the next scene", icon: Play, tone: "amber" },
 ];
 
-type LedgerProject = { id: string; name: string; workflow: string; reviewed: boolean; connected: boolean };
+type LedgerProject = { id: string; name: string; workflow: string; reviewed: boolean; connected: boolean; entryActive: boolean };
 
 const initialLedgerProjects: LedgerProject[] = [
-  { id: "topsurveys", name: "TopSurveys", workflow: "Account review", reviewed: false, connected: false },
-  { id: "fivesurveys", name: "Five Surveys", workflow: "Balance entry", reviewed: true, connected: true },
-  { id: "inboxdollars", name: "InboxDollars", workflow: "Reconciliation", reviewed: false, connected: false },
+  { id: "topsurveys", name: "TopSurveys", workflow: "Account review", reviewed: false, connected: false, entryActive: false },
+  { id: "fivesurveys", name: "Five Surveys", workflow: "Balance entry", reviewed: true, connected: true, entryActive: false },
+  { id: "inboxdollars", name: "InboxDollars", workflow: "Reconciliation", reviewed: false, connected: false, entryActive: false },
 ];
 
 function LedgerMark({ compact = false }: { compact?: boolean }) {
@@ -90,7 +90,7 @@ export default function App() {
     event.preventDefault();
     const name = ledgerName.trim();
     if (!name) return;
-    setLedgerProjects((projects) => [...projects, { id: crypto.randomUUID(), name, workflow: "Account review", reviewed: false, connected: false }]);
+    setLedgerProjects((projects) => [...projects, { id: crypto.randomUUID(), name, workflow: "Account review", reviewed: false, connected: false, entryActive: false }]);
     setLedgerName("");
     setActivity(`${name} has been added to the ledger projects queue.`);
   }
@@ -103,6 +103,18 @@ export default function App() {
   function toggleConnection(id: string) {
     setLedgerProjects((projects) => projects.map((project) => project.id === id ? { ...project, connected: !project.connected } : project));
     setActivity("Browser session state updated locally.");
+  }
+
+  function startLedgerEntry(id: string) {
+    const project = ledgerProjects.find((item) => item.id === id);
+    setLedgerProjects((projects) => projects.map((item) => item.id === id ? { ...item, connected: true, entryActive: true } : item));
+    setActivity(`${project?.name || "Platform"} entry started. The platform channel is now active.`);
+  }
+
+  function stopLedgerEntry(id: string) {
+    const project = ledgerProjects.find((item) => item.id === id);
+    setLedgerProjects((projects) => projects.map((item) => item.id === id ? { ...item, entryActive: false } : item));
+    setActivity(`${project?.name || "Platform"} entry stopped safely. The platform channel remains available for review.`);
   }
 
   return (
@@ -195,7 +207,7 @@ export default function App() {
           <div className="section-heading"><div><span className="eyebrow"><CircleDot size={15} /> Ledger Projects</span><h2 id="ledger-title">Keep each account <em>in view.</em></h2></div><p>Dedicated review states, browser session cues, and clear next actions—kept together in the working ledger.</p></div>
           <div className="ledger-shell">
             <div className="ledger-summary"><div><span>Projects</span><b>{ledgerProjects.length.toString().padStart(2, "0")}</b></div><div><span>Reviewed</span><b>{ledgerProjects.filter((project) => project.reviewed).length.toString().padStart(2, "0")}</b></div><div><span>Sessions</span><b>{ledgerProjects.filter((project) => project.connected).length.toString().padStart(2, "0")}</b></div><p><ShieldCheck size={17} />Review holds remain visible when evidence is missing.</p></div>
-            <div className="ledger-list">{ledgerProjects.map((project, index) => <article className="ledger-row" key={project.id}><span className="ledger-index">{(index + 1).toString().padStart(2, "0")}</span><div className="ledger-project-name"><h3>{project.name}</h3><p>{project.workflow} · {project.connected ? "Browser session connected" : "Connect an account to start"}</p></div><span className={`ledger-state ${project.reviewed ? "is-reviewed" : ""}`}><i />{project.reviewed ? "Reviewed" : "Pending"}</span><div className="ledger-actions"><button onClick={() => toggleConnection(project.id)}>{project.connected ? "Disconnect" : "Connect"}</button><button className="review-action" onClick={() => toggleLedgerReview(project.id)}>{project.reviewed ? "Reopen" : "Review"}<ArrowUpRight size={14} /></button></div></article>)}</div>
+            <div className="ledger-list">{ledgerProjects.map((project, index) => <article className={`ledger-row ${project.entryActive ? "is-entry-running" : ""}`} key={project.id}><span className="ledger-index">{(index + 1).toString().padStart(2, "0")}</span><div className="ledger-project-name"><h3>{project.name}</h3><p>{project.workflow} · {project.entryActive ? "Entry running in platform channel" : project.connected ? "Browser session connected" : "Connect an account to start"}</p></div><span className={`ledger-state ${project.reviewed ? "is-reviewed" : ""}`}><i />{project.reviewed ? "Reviewed" : "Pending"}</span><div className="ledger-actions"><button onClick={() => toggleConnection(project.id)}>{project.connected ? "Disconnect" : "Connect"}</button><button className="entry-start" disabled={project.entryActive} onClick={() => startLedgerEntry(project.id)}><Play size={13} />Start Entry</button><button className="entry-stop" disabled={!project.entryActive} onClick={() => stopLedgerEntry(project.id)}><Pause size={13} />Stop Entry</button><button className="review-action" onClick={() => toggleLedgerReview(project.id)}>{project.reviewed ? "Reopen" : "Review"}<ArrowUpRight size={14} /></button></div></article>)}</div>
             <form className="ledger-add" onSubmit={addLedgerProject}><label htmlFor="ledger-name">Add ledger project</label><div><input id="ledger-name" value={ledgerName} onChange={(event) => setLedgerName(event.target.value)} placeholder="Platform or account name" /><button type="submit"><Plus size={16} />Add</button></div></form>
           </div>
         </section>
