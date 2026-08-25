@@ -32,3 +32,11 @@ To publish from GitHub, open **Settings → Pages** and select **GitHub Actions*
 ## Design direction
 
 The web display follows **The Archivist’s Desk**: contemporary editorial craft with a parchment working surface, register-green navigation, antique-gold verification marks, and evidence-first microcopy. The project uses generated Bonds Studio artwork by external CDN URL so the repository remains lightweight.
+
+## GitHub web project + Android App button
+
+Bonds Studio is configured for GitHub Pages through `.github/workflows/pages.yml`.
+
+The header menu includes an **Android App** action at the bottom of the menu. On GitHub Pages it automatically derives the repository and opens the latest `bonds-studio.apk` release asset. Set `VITE_ANDROID_APK_URL` when a repository uses a custom release destination.
+
+See `ANDROID-APP.md` for the APK publishing and upgrade flow.
