@@ -1,0 +1,1 @@
+-- No-op: superseded by the corrected 0001 DNS registry migration.
