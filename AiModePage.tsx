@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { AlertCircle, Brain, Check, Cpu, Loader2, Plus, Sparkles, Trash2, Wrench, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DataEntryAutomationPanel } from "@/components/DataEntryAutomationPanel";
 
 const SUGGESTIONS = [
   "Give me an overview of this workspace",
@@ -119,6 +120,7 @@ export default function AiModePage() {
           })}
         </div>
       </div>
+      <DataEntryAutomationPanel />
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[175px_minmax(0,1fr)_220px]">
         <aside className="flex min-h-[520px] flex-col border border-[#17231e]/10 bg-[#f9f5ec]">
           <div className="flex items-center justify-between border-b border-[#17231e]/10 px-4 py-3">
