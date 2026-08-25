@@ -76,6 +76,25 @@ const initialLedgerProjects: LedgerProject[] = [
   { id: "venmo", name: "Venmo", workflow: "Peer payment entry", reviewed: false, connected: false, entryActive: false },
 ];
 
+const platformDestinations: Record<string, { url: string; label: string }> = {
+  "topsurveys": { url: "https://www.topsurveys.app/", label: "TopSurveys public page" },
+  "fivesurveys": { url: "https://fivesurveys.com/", label: "Five Surveys public page" },
+  "swagbucks": { url: "https://www.swagbucks.com/", label: "Swagbucks public page" },
+  "inboxdollars": { url: "https://www.inboxdollars.com/", label: "InboxDollars public page" },
+  "survey-junkie": { url: "https://www.surveyjunkie.com/", label: "Survey Junkie public page" },
+  "branded-surveys": { url: "https://surveys.gobranded.com/", label: "Branded Surveys public page" },
+  "prolific": { url: "https://app.prolific.com/", label: "Prolific public page" },
+  "usertesting": { url: "https://www.usertesting.com/get-paid-to-test", label: "UserTesting public page" },
+  "mechanical-turk": { url: "https://worker.mturk.com/", label: "Amazon Mechanical Turk public page" },
+  "respondent": { url: "https://app.respondent.io/", label: "Respondent public page" },
+  "nice-survey": { url: "https://www.nicesurveys.com/", label: "NiceSurveys public page" },
+  "surveymonkey": { url: "https://www.surveymonkey.com/", label: "SurveyMonkey public page" },
+  "etsy": { url: "https://www.etsy.com/", label: "Etsy public page" },
+  "ebay": { url: "https://www.ebay.com/", label: "eBay public page" },
+  "paypal": { url: "https://www.paypal.com/", label: "PayPal public page" },
+  "venmo": { url: "https://venmo.com/", label: "Venmo public page" },
+};
+
 function LedgerMark({ compact = false }: { compact?: boolean }) {
   return <span className={`ledger-emblem ${compact ? "is-compact" : ""}`} aria-hidden="true"><i /><i /><i /><b /></span>;
 }
@@ -101,6 +120,7 @@ export default function App() {
   const [workspace, setWorkspace] = useState<AccountWorkspace | null>(null);
   const [minimizedWorkspace, setMinimizedWorkspace] = useState<AccountWorkspace | null>(null);
   const focusedRegion = simulatedFocusProfiles[focusIndex];
+  const workspaceDestination = workspace ? platformDestinations[workspace.platformId] : null;
 
   const setActivity = (message: string) => setNotice(message);
 
@@ -296,7 +316,7 @@ export default function App() {
 
       {workspace && <aside className={`account-workspace-window ${workspace.expanded ? "is-expanded" : ""}`} aria-label={`${workspace.platformName} account workspace`}>
         <header className="workspace-window-head"><div><span className="sensor-dot" />Local account workspace</div><div className="workspace-window-controls"><button onClick={() => setWorkspace({ ...workspace, expanded: !workspace.expanded })} aria-label={workspace.expanded ? "Reduce account workspace" : "Expand account workspace"}><Maximize2 size={14} /></button><button onClick={minimizeWorkspace} aria-label="Minimize account workspace"><Minus size={15} /></button><button onClick={minimizeWorkspace} aria-label="Close and preserve account workspace"><X size={14} /></button></div></header>
-        <div className="workspace-window-body"><div className="workspace-platform-line"><strong>{workspace.platformName}</strong><span>Platform-specific workspace</span></div><div className="workspace-account-tabs" role="tablist" aria-label={`${workspace.platformName} accounts`}>{workspace.accounts.map((account) => <button key={account.id} className={workspace.activeAccountId === account.id ? "is-active" : ""} onClick={() => setWorkspace({ ...workspace, activeAccountId: account.id })}>{account.label}<i className={account.connected ? "is-connected" : ""} /></button>)}<button className="add-account-button" onClick={addWorkspaceAccount}>+ Add another</button></div><label className="workspace-browser-type">Browser type<select value={workspace.browserType} onChange={(event) => setWorkspace({ ...workspace, browserType: event.target.value })}><option>Dedicated workspace</option><option>Isolated workspace</option><option>Read-only workspace</option></select></label><div className="workspace-browser-surface"><span>{workspace.platformName} · {workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.label}</span><strong>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Ready to connect"}</strong><p>Local session workspace for this platform and account. Third-party sign-in, browser automation, and credential handling are not enabled.</p><button className={workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "workspace-connect is-connected" : "workspace-connect"} onClick={connectWorkspaceAccount}>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Mark connected"}</button></div></div>
+        <div className="workspace-window-body"><div className="workspace-platform-line"><strong>{workspace.platformName}</strong><span>Platform-specific workspace</span></div><div className="workspace-account-tabs" role="tablist" aria-label={`${workspace.platformName} accounts`}>{workspace.accounts.map((account) => <button key={account.id} className={workspace.activeAccountId === account.id ? "is-active" : ""} onClick={() => setWorkspace({ ...workspace, activeAccountId: account.id })}>{account.label}<i className={account.connected ? "is-connected" : ""} /></button>)}<button className="add-account-button" onClick={addWorkspaceAccount}>+ Add another</button></div><label className="workspace-browser-type">Browser type<select value={workspace.browserType} onChange={(event) => setWorkspace({ ...workspace, browserType: event.target.value })}><option>Dedicated workspace</option><option>Isolated workspace</option><option>Read-only workspace</option></select></label><div className="workspace-browser-surface"><div className="workspace-page-bar"><span><Globe2 size={13} />{workspaceDestination?.label || "No destination configured"}</span>{workspaceDestination && <a href={workspaceDestination.url} target="_blank" rel="noreferrer">Open platform <ArrowUpRight size={13} /></a>}</div>{workspaceDestination ? <iframe className="workspace-page-frame" src={workspaceDestination.url} title={workspaceDestination.label} sandbox="allow-forms allow-popups allow-scripts" referrerPolicy="strict-origin-when-cross-origin" /> : <p className="workspace-page-empty">A public platform destination has not been configured for this custom ledger project.</p>}<div className="workspace-page-overlay"><span>{workspace.platformName} · {workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.label}</span><strong>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Ready to connect"}</strong><p>Public platform surface for this local workspace. If the provider blocks embedding, use Open platform. Third-party sign-in, credential handling, and browser automation are not enabled here.</p><button className={workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "workspace-connect is-connected" : "workspace-connect"} onClick={connectWorkspaceAccount}>{workspace.accounts.find((account) => account.id === workspace.activeAccountId)?.connected ? "Connected" : "Mark connected"}</button></div></div></div>
       </aside>}
       {minimizedWorkspace && <button className="workspace-minimized-dock" onClick={() => { setWorkspace(minimizedWorkspace); setMinimizedWorkspace(null); }}><span className="sensor-dot" />{minimizedWorkspace.platformName} · resume session <Maximize2 size={14} /></button>}
 
