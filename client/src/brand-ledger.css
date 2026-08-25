@@ -1,5 +1,6 @@
 /** Design reinforcement: Orbital Studio remains the surface; Bonds Studio is expressed through a ledger emblem, editorial display face, verification squares, and indexed record frames. */
 :root { --register-green: #2c5b48; --ledger-gold: #c9a84c; font-family: "DM Sans", sans-serif; }
+.bc-icon { align-items: center; background: linear-gradient(145deg, #f7fbf5 0%, #dfeade 100%); border: 1px solid rgba(201,168,76,.8); border-radius: 7px 7px 2px 2px; color: var(--register-green); display: inline-flex; font-family: "Space Grotesk", sans-serif; font-size: 11px; font-weight: 700; height: 41px; justify-content: center; letter-spacing: -.13em; position: relative; width: 41px; }.bc-icon::after { background: var(--ledger-gold); bottom: 4px; content: ""; height: 4px; position: absolute; width: 4px; }
 
 .brand-orb { display: none; }
 .brand-identity { align-items: center; display: inline-flex; gap: 10px; }
@@ -18,3 +19,4 @@
 
 @media (max-width: 960px) { .orbital-copy { top: 82px; } }
 @media (max-width: 680px) { .brand-wordmark { font-size: 16px; }.ledger-emblem { height: 35px; width: 35px; }.orbital-copy { top: 90px; }.hero-brand-ledger { margin-bottom: 18px; }.module-section { margin-left: 16px; padding-left: 18px; }.section-heading { margin-left: 0; margin-right: 0; }.section-heading > p { border-left: 0; padding-left: 0; }.creative-card h3, .create-anything-card h3 { font-size: 24px; } }
+@media (max-width: 680px) { .bc-icon { height: 35px; width: 35px; } }

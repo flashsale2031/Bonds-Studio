@@ -108,7 +108,7 @@ export default function App() {
   return (
     <div className="orbital-app">
       <header className="site-header">
-        <a className="brand-lockup" href="#orbit" aria-label="Bonds Studio home"><BrandIdentity /></a>
+        <a className="brand-lockup" href="#orbit" aria-label="Bonds Studio home"><span className="bc-icon" aria-hidden="true">BC</span><span className="brand-wordmark"><b>Bonds</b><i>Studio</i></span></a>
         <nav className="desktop-nav" aria-label="Header menu">
           {navLinks.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
         </nav>
