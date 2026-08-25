@@ -3,12 +3,23 @@
   "version": "3.7.0",
   "private": true,
   "type": "module",
-  "description": "Bonds Studio — browser-ready ledger workspace.",
+  "description": "Bonds Studio \u2014 browser-ready ledger workspace.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "terminal": "node terminal-server.mjs",
+    "dev:all": "node scripts/dev-all.mjs",
+    "build:app": "npm run check && vite build",
+    "release:local": "npm run build && npm run preview",
+    "deploy:vercel": "npm run build && npx vercel --prod",
+    "deploy:netlify": "npm run build && npx netlify deploy --prod",
+    "deploy:cloudflare": "npm run build && npx wrangler deploy",
+    "build:targets": "node scripts/build-targets.mjs",
+    "release:matrix": "node scripts/build-targets.mjs",
+    "toolchains:bootstrap": "node scripts/online-toolchains.mjs --native --android",
+    "build:github": "npm run check && npm run build"
   },
   "dependencies": {
     "lucide-react": "^0.453.0",
