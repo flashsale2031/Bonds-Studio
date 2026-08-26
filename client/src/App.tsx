@@ -130,13 +130,13 @@ function BrowserWorkspace({ browserAddress, browserLoadedUrl, browserHistory, br
 
   return <div className="browser-app-shell">
     <header className="browser-app-header">
-      <a className="browser-app-brand" href="#browser-home" onClick={(event) => { event.preventDefault(); onNavigate(platformDestinations.topsurveys.url); }}><span className="bc-icon" aria-hidden="true">BC</span><span><b>Bonds</b> Browser</span></a>
+      <a className="browser-app-brand" href="#browser-home" onClick={(event) => { event.preventDefault(); onNavigate(""); }}><span className="bc-icon" aria-hidden="true">BC</span><span><b>Bonds</b> Browser</span></a>
       <div className="browser-app-status"><span className="signal-dot" />Public web workspace</div>
       <button className="browser-dashboard-button" onClick={onDashboard}><LayoutDashboard size={15} />Dashboard</button>
     </header>
     <div className="browser-app-layout">
       <aside className="browser-app-sidebar" aria-label="Browser menu">
-        <button className="browser-menu-item is-active" onClick={() => onNavigate(platformDestinations.topsurveys.url)}><Globe2 size={16} /><span>Browser</span></button>
+        <button className="browser-menu-item is-active" onClick={() => onNavigate("")}><Globe2 size={16} /><span>Browser</span></button>
         <button className="browser-menu-item" onClick={onDashboard}><Home size={16} /><span>Dashboard</span></button>
         <div className="browser-menu-rule" />
         <p className="browser-menu-label">Quick pages</p>
@@ -144,15 +144,15 @@ function BrowserWorkspace({ browserAddress, browserLoadedUrl, browserHistory, br
         <div className="browser-boundary-note"><LockKeyhole size={14} /><p>Public pages only. Bonds Studio does not store passwords, cookies, or third-party login sessions.</p></div>
       </aside>
       <main className="browser-app-main" id="browser-home">
-        <div className="browser-tab-strip"><span className="browser-tab"><Globe2 size={14} />Public web view</span><button className="browser-new-tab" onClick={() => onNavigate(platformDestinations.topsurveys.url)}><Plus size={14} />New public view</button></div>
+        <div className="browser-tab-strip"><span className="browser-tab"><Globe2 size={14} />{browserLoadedUrl ? "Public web view" : "Browser start"}</span><button className="browser-new-tab" onClick={() => onNavigate("")}><Plus size={14} />New public view</button></div>
         <div className="browser-navigation-bar">
-          <div className="browser-nav-controls"><button disabled={browserHistoryIndex === 0} onClick={() => onHistoryMove(-1)} aria-label="Back"><ChevronLeft size={17} /></button><button disabled={browserHistoryIndex >= browserHistory.length - 1} onClick={() => onHistoryMove(1)} aria-label="Forward"><ChevronRight size={17} /></button><button onClick={() => onNavigate(browserLoadedUrl)} aria-label="Reload public page"><RefreshCw size={15} /></button></div>
+          <div className="browser-nav-controls"><button disabled={browserHistoryIndex <= 0} onClick={() => onHistoryMove(-1)} aria-label="Back"><ChevronLeft size={17} /></button><button disabled={browserHistoryIndex < 0 || browserHistoryIndex >= browserHistory.length - 1} onClick={() => onHistoryMove(1)} aria-label="Forward"><ChevronRight size={17} /></button><button disabled={!browserLoadedUrl} onClick={() => onNavigate(browserLoadedUrl)} aria-label="Reload public page"><RefreshCw size={15} /></button></div>
           <form className="browser-address-form" onSubmit={handleAddressSubmit}><Search size={15} /><input aria-label="Public website address" value={browserAddress} onChange={(event) => onAddressChange(event.target.value)} placeholder="https://example.com" /><button type="submit">Go</button></form>
-          <a className="browser-external-link" href={browserLoadedUrl} target="_blank" rel="noreferrer">Open externally <ArrowUpRight size={14} /></a>
+          {browserLoadedUrl ? <a className="browser-external-link" href={browserLoadedUrl} target="_blank" rel="noreferrer">Open externally <ArrowUpRight size={14} /></a> : <span className="browser-external-placeholder">Public pages only</span>}
         </div>
         <section className="browser-public-page" aria-label="Public web page view">
-          <div className="browser-page-notice"><span><LockKeyhole size={13} />Public web view</span><p>Use the page’s own links when the provider permits framing. Use Open externally if it blocks embedded display or requires native sign-in.</p></div>
-          <iframe key={browserLoadedUrl} className="browser-page-frame" src={browserLoadedUrl} title="Bonds Browser public web view" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerPolicy="strict-origin-when-cross-origin" />
+          <div className="browser-page-notice"><span><LockKeyhole size={13} />{browserLoadedUrl ? "Public web view" : "Browser start"}</span><p>{browserLoadedUrl ? "Use the page’s own links when the provider permits framing. Use Open externally if it blocks embedded display or requires native sign-in." : "Choose a public platform below or enter a secure https address to begin."}</p></div>
+          {browserLoadedUrl ? <iframe key={browserLoadedUrl} className="browser-page-frame" src={browserLoadedUrl} title="Bonds Browser public web view" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerPolicy="strict-origin-when-cross-origin" /> : <div className="browser-start-page"><div><span className="eyebrow"><Globe2 size={15} /> Public browser</span><h1>Start with a <em>public page.</em></h1><p>Bonds Browser is a public-web workspace. Choose a platform view, then use the provider’s own page navigation when embedding is available.</p></div><div className="browser-start-grid">{browserShortcuts.map((shortcut) => <button key={shortcut.label} onClick={() => onNavigate(shortcut.url)}><Globe2 size={16} /><span>{shortcut.label}</span><ArrowUpRight size={14} /></button>)}</div><div className="browser-start-boundary"><LockKeyhole size={15} />No passwords, browser cookies, or third-party login sessions are stored in Bonds Studio.</div></div>}
         </section>
       </main>
     </div>
@@ -184,10 +184,10 @@ export default function App() {
   const [workspace, setWorkspace] = useState<AccountWorkspace | null>(null);
   const [minimizedWorkspace, setMinimizedWorkspace] = useState<AccountWorkspace | null>(null);
   const [appView, setAppView] = useState<"browser" | "dashboard">("browser");
-  const [browserAddress, setBrowserAddress] = useState(platformDestinations.topsurveys.url);
-  const [browserLoadedUrl, setBrowserLoadedUrl] = useState(platformDestinations.topsurveys.url);
-  const [browserHistory, setBrowserHistory] = useState([platformDestinations.topsurveys.url]);
-  const [browserHistoryIndex, setBrowserHistoryIndex] = useState(0);
+  const [browserAddress, setBrowserAddress] = useState("");
+  const [browserLoadedUrl, setBrowserLoadedUrl] = useState("");
+  const [browserHistory, setBrowserHistory] = useState<string[]>([]);
+  const [browserHistoryIndex, setBrowserHistoryIndex] = useState(-1);
   const focusedRegion = simulatedFocusProfiles[focusIndex];
   const workspaceDestination = workspace ? platformDestinations[workspace.platformId] : null;
 
@@ -283,6 +283,13 @@ export default function App() {
 
   function navigateBrowser(url: string) {
     const normalizedUrl = url.trim();
+    if (!normalizedUrl) {
+      setBrowserAddress("");
+      setBrowserLoadedUrl("");
+      setBrowserHistoryIndex(-1);
+      setActivity("Browser start page opened. Choose a public platform or enter a secure URL.");
+      return;
+    }
     if (!/^https:\/\//i.test(normalizedUrl)) {
       setActivity("Only secure https public URLs can be opened in the local browser workspace.");
       return;
