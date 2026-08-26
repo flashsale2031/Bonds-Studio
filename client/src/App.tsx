@@ -5,13 +5,17 @@ import {
   BrainCircuit,
   Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronDown,
   ChevronRight,
   CircleDot,
   Compass,
   Eye,
   Globe2,
+  Home,
+  LayoutDashboard,
   Layers3,
+  LockKeyhole,
   Maximize2,
   Menu,
   Mic,
@@ -20,7 +24,9 @@ import {
   Pause,
   Play,
   Plus,
+  RefreshCw,
   RotateCcw,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
@@ -95,6 +101,64 @@ const platformDestinations: Record<string, { url: string; label: string }> = {
   "venmo": { url: "https://venmo.com/", label: "Venmo public page" },
 };
 
+const browserShortcuts = [
+  { label: "TopSurveys", url: platformDestinations.topsurveys.url },
+  { label: "Prolific", url: platformDestinations.prolific.url },
+  { label: "Respondent", url: platformDestinations.respondent.url },
+  { label: "Etsy", url: platformDestinations.etsy.url },
+  { label: "PayPal", url: platformDestinations.paypal.url },
+];
+
+type BrowserWorkspaceProps = {
+  browserAddress: string;
+  browserLoadedUrl: string;
+  browserHistory: string[];
+  browserHistoryIndex: number;
+  onAddressChange: (value: string) => void;
+  onNavigate: (url: string) => void;
+  onHistoryMove: (direction: -1 | 1) => void;
+  onDashboard: () => void;
+};
+
+function BrowserWorkspace({ browserAddress, browserLoadedUrl, browserHistory, browserHistoryIndex, onAddressChange, onNavigate, onHistoryMove, onDashboard }: BrowserWorkspaceProps) {
+  function handleAddressSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const requestedUrl = browserAddress.trim();
+    if (!/^https:\/\//i.test(requestedUrl)) return;
+    onNavigate(requestedUrl);
+  }
+
+  return <div className="browser-app-shell">
+    <header className="browser-app-header">
+      <a className="browser-app-brand" href="#browser-home" onClick={(event) => { event.preventDefault(); onNavigate(platformDestinations.topsurveys.url); }}><span className="bc-icon" aria-hidden="true">BC</span><span><b>Bonds</b> Browser</span></a>
+      <div className="browser-app-status"><span className="signal-dot" />Public web workspace</div>
+      <button className="browser-dashboard-button" onClick={onDashboard}><LayoutDashboard size={15} />Dashboard</button>
+    </header>
+    <div className="browser-app-layout">
+      <aside className="browser-app-sidebar" aria-label="Browser menu">
+        <button className="browser-menu-item is-active" onClick={() => onNavigate(platformDestinations.topsurveys.url)}><Globe2 size={16} /><span>Browser</span></button>
+        <button className="browser-menu-item" onClick={onDashboard}><Home size={16} /><span>Dashboard</span></button>
+        <div className="browser-menu-rule" />
+        <p className="browser-menu-label">Quick pages</p>
+        {browserShortcuts.map((shortcut) => <button className={browserLoadedUrl === shortcut.url ? "browser-shortcut is-active" : "browser-shortcut"} key={shortcut.label} onClick={() => onNavigate(shortcut.url)}>{shortcut.label}</button>)}
+        <div className="browser-boundary-note"><LockKeyhole size={14} /><p>Public pages only. Bonds Studio does not store passwords, cookies, or third-party login sessions.</p></div>
+      </aside>
+      <main className="browser-app-main" id="browser-home">
+        <div className="browser-tab-strip"><span className="browser-tab"><Globe2 size={14} />Public web view</span><button className="browser-new-tab" onClick={() => onNavigate(platformDestinations.topsurveys.url)}><Plus size={14} />New public view</button></div>
+        <div className="browser-navigation-bar">
+          <div className="browser-nav-controls"><button disabled={browserHistoryIndex === 0} onClick={() => onHistoryMove(-1)} aria-label="Back"><ChevronLeft size={17} /></button><button disabled={browserHistoryIndex >= browserHistory.length - 1} onClick={() => onHistoryMove(1)} aria-label="Forward"><ChevronRight size={17} /></button><button onClick={() => onNavigate(browserLoadedUrl)} aria-label="Reload public page"><RefreshCw size={15} /></button></div>
+          <form className="browser-address-form" onSubmit={handleAddressSubmit}><Search size={15} /><input aria-label="Public website address" value={browserAddress} onChange={(event) => onAddressChange(event.target.value)} placeholder="https://example.com" /><button type="submit">Go</button></form>
+          <a className="browser-external-link" href={browserLoadedUrl} target="_blank" rel="noreferrer">Open externally <ArrowUpRight size={14} /></a>
+        </div>
+        <section className="browser-public-page" aria-label="Public web page view">
+          <div className="browser-page-notice"><span><LockKeyhole size={13} />Public web view</span><p>Use the page’s own links when the provider permits framing. Use Open externally if it blocks embedded display or requires native sign-in.</p></div>
+          <iframe key={browserLoadedUrl} className="browser-page-frame" src={browserLoadedUrl} title="Bonds Browser public web view" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerPolicy="strict-origin-when-cross-origin" />
+        </section>
+      </main>
+    </div>
+  </div>;
+}
+
 function LedgerMark({ compact = false }: { compact?: boolean }) {
   return <span className={`ledger-emblem ${compact ? "is-compact" : ""}`} aria-hidden="true"><i /><i /><i /><b /></span>;
 }
@@ -119,6 +183,11 @@ export default function App() {
   const [profileVisible, setProfileVisible] = useState(true);
   const [workspace, setWorkspace] = useState<AccountWorkspace | null>(null);
   const [minimizedWorkspace, setMinimizedWorkspace] = useState<AccountWorkspace | null>(null);
+  const [appView, setAppView] = useState<"browser" | "dashboard">("browser");
+  const [browserAddress, setBrowserAddress] = useState(platformDestinations.topsurveys.url);
+  const [browserLoadedUrl, setBrowserLoadedUrl] = useState(platformDestinations.topsurveys.url);
+  const [browserHistory, setBrowserHistory] = useState([platformDestinations.topsurveys.url]);
+  const [browserHistoryIndex, setBrowserHistoryIndex] = useState(0);
   const focusedRegion = simulatedFocusProfiles[focusIndex];
   const workspaceDestination = workspace ? platformDestinations[workspace.platformId] : null;
 
@@ -212,6 +281,32 @@ export default function App() {
     setActivity(`${project?.name || "Platform"} entry stopped safely. The platform channel remains available for review.`);
   }
 
+  function navigateBrowser(url: string) {
+    const normalizedUrl = url.trim();
+    if (!/^https:\/\//i.test(normalizedUrl)) {
+      setActivity("Only secure https public URLs can be opened in the local browser workspace.");
+      return;
+    }
+    setBrowserAddress(normalizedUrl);
+    setBrowserLoadedUrl(normalizedUrl);
+    const nextHistory = [...browserHistory.slice(0, browserHistoryIndex + 1), normalizedUrl];
+    setBrowserHistory(nextHistory);
+    setBrowserHistoryIndex(nextHistory.length - 1);
+  }
+
+  function moveBrowserHistory(direction: -1 | 1) {
+    const nextIndex = browserHistoryIndex + direction;
+    const nextUrl = browserHistory[nextIndex];
+    if (!nextUrl) return;
+    setBrowserHistoryIndex(nextIndex);
+    setBrowserAddress(nextUrl);
+    setBrowserLoadedUrl(nextUrl);
+  }
+
+  if (appView === "browser") {
+    return <BrowserWorkspace browserAddress={browserAddress} browserLoadedUrl={browserLoadedUrl} browserHistory={browserHistory} browserHistoryIndex={browserHistoryIndex} onAddressChange={setBrowserAddress} onNavigate={navigateBrowser} onHistoryMove={moveBrowserHistory} onDashboard={() => setAppView("dashboard")} />;
+  }
+
   return (
     <div className="orbital-app">
       <header className="site-header">
@@ -219,9 +314,9 @@ export default function App() {
         <nav className="desktop-nav" aria-label="Header menu">
           {navLinks.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
         </nav>
-        <button className="header-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-controls="header-menu">
+        <div className="dashboard-header-actions"><button className="browser-return-button" onClick={() => setAppView("browser")}><Globe2 size={15} />Browser</button><button className="header-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-controls="header-menu">
           {menuOpen ? <X size={18} /> : <Menu size={18} />}<span>Menu</span>
-        </button>
+        </button></div>
       </header>
 
       <nav id="header-menu" className={`mobile-menu ${menuOpen ? "is-open" : ""}`} aria-label="Mobile header menu">
