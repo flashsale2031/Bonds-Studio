@@ -102,3 +102,17 @@
 .prosecutor-detail-panel { background: linear-gradient(150deg, rgba(20, 55, 55, .88), rgba(6, 19, 31, .76)); }
 .prosecutor-detail-panel .civic-detail-tags span:first-child { color: #e7d58c; border-color: rgba(201, 168, 76, .35); }
 @media (max-width: 680px) { .prosecutor-type-chip { display: none; } }
+
+
+/* Courthouse directory extension */
+.courthouse-section { scroll-margin-top: 92px; }
+.courthouse-section .section-index { color: #f0d68b; }
+.courthouse-command-bar { background: linear-gradient(116deg, #2a2d3e, #101b31 70%, #1d263c); }
+.courthouse-metrics strong { color: #f0d68b; }
+.courthouse-register { box-shadow: 0 15px 45px rgba(2, 11, 19, .2), inset 0 3px 0 rgba(201, 168, 76, .82); }
+.courthouse-type-chip { border: 1px solid rgba(127, 222, 235, .3); border-radius: 5px; color: #9ee8e7; font-family: "DM Mono", monospace; font-size: 8px; letter-spacing: .06em; padding: 4px 5px; }
+.courthouse-row .civic-row-copy small { color: #a6c0c5; }
+.courthouse-detail-panel { background: linear-gradient(150deg, rgba(43, 47, 61, .9), rgba(6, 19, 31, .78)); }
+.courthouse-detail-panel .civic-detail-tags span:first-child { color: #f0d68b; border-color: rgba(201, 168, 76, .35); }
+.courthouse-detail-panel .civic-contact-block strong { color: #f1ebd1; }
+@media (max-width: 680px) { .courthouse-type-chip { display: none; } }

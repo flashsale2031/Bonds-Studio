@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import CongressCommandCenter from "./CongressCommandCenter";
 import ProsecutorDirectory from "./ProsecutorDirectory";
+import CourthouseDirectory from "./CourthouseDirectory";
 import {
   ArrowUpRight,
   BrainCircuit,
@@ -43,6 +44,7 @@ const navLinks = [
   { label: "AI command center", href: "#ai-mode" },
   { label: "Phone / Civic", href: "#phone" },
   { label: "Prosecutors", href: "#prosecutors" },
+  { label: "Courthouses", href: "#courthouses" },
   { label: "Creative", href: "#creative-projects" },
   { label: "Ledger", href: "#ledger-projects" },
 ];
@@ -403,6 +405,7 @@ export default function App() {
 
         <CongressCommandCenter onActivity={setActivity} />
         <ProsecutorDirectory onActivity={setActivity} />
+        <CourthouseDirectory onActivity={setActivity} />
 
         <section className="module-section creative-section" id="creative-projects" aria-labelledby="creative-title"><span className="section-index" aria-hidden="true">03</span>
           <div className="section-heading"><div><span className="eyebrow"><Sparkles size={15} /> Creative Projects</span><h2 id="creative-title">Build the next <em>small world.</em></h2></div><p>Select a medium, give it an intention, then make its first room.</p></div>

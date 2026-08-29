@@ -1,0 +1,19 @@
+# Courthouse directory research notes
+
+Research date: 2026-08-29.
+
+The official [U.S. Courts Federal Court Finder](https://www.uscourts.gov/federal-court-finder/find) is a public .gov locator with address, phone, directions, court-type, and official location pages. The live finder reports 1,319 federal court/service-location records across U.S. Courts of Appeals (63), U.S. District Courts (335), U.S. Bankruptcy Courts (214), U.S. Probation and Pretrial Services (487), and Federal Defender Organizations (207). Each result exposes a court/service name, city/state, courthouse or building address, a directions route, a public phone number, and a stable official location URL.
+
+The federal locator is authoritative and structured, but it does not enumerate every state, county, municipal, tribal, or territorial courthouse in the United States. USA.gov directs users to each state or territory court website for county and municipal courts, and there is no single authoritative nationwide public dataset covering every local courthouse. The implementation should therefore label the directory as an official federal courthouse/service-location register and avoid claiming universal state/local coverage. A future state-by-state expansion can be added as separately sourced layers.
+
+The live locator uses stable `.court-finder-result` cards. Each card includes a location URL under `/federal-court-finder/location/{id}`, a title in `h3 a`, a court/service type in `.court-finder-result__type`, an address block in `.court-finder-result__address` with courthouse/building name on line 1 and postal address on following lines, a directions link in `.court-finder-result__directions`, and a phone link in `.court-finder-result__phone`. Pagination uses `find?page=0` through `find?page=131`, with 10 results per page (the first page reports `Displaying 1 - 10 of 1319`).
+
+Bulk collection checkpoint: the live page fetch works from the browser context and the official pagination runs from `page=0` through `page=131`. The first attempt returned zero parsed records because `innerText` is empty in a disconnected DOMParser document; the corrected parser converts the address block's `<br>` tags to line breaks. Pages 0–19 have now been collected into browser session storage with 200 records. Sample parsed record: Richard H. Chambers Court of Appeals Building, 125 South Grand Avenue, Pasadena, CA 91105-1621, phone 626-229-7220, official location URL ending in `/location/200`.
+
+Pages 20–39 appended successfully, bringing the session dataset to 400 records. A 20-page batch for pages 40–59 exceeded the 30-second browser execution window and was canceled before persistence, so subsequent batches will use smaller ranges to avoid losing progress.
+
+Concurrent batches for pages 40–59 and 60–79 completed successfully. The browser session dataset now contains 1,000 official U.S. Courts locator records. Each batch preserves courthouse/building name, court/service title, court type, postal address, state, ZIP, phone, directions URL, and official location URL.
+
+Pages 80–99 and 100–119 completed successfully. The browser session dataset now contains 1,400 parsed records; the official locator’s first-page count indicates 1,319 unique records are expected, so the final export will deduplicate stable location IDs and validate the resulting count.
+
+The completed browser collection returned 1,519 raw cards and 1,319 unique stable location IDs after deduplication. An audit found 245 records where the source provides a street address as the first address line and no separate courthouse/building name; the importer must preserve those street addresses as `address` and use the court title as the display name rather than leaving the address blank. Example: Texas Western District Court — San Antonio, 262 W. Nueva St., San Antonio, TX 78207.
