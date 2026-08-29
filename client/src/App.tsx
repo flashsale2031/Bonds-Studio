@@ -1,6 +1,7 @@
 /** Design: Orbital Studio — the Earth remains the centered display object; a fixed red viewport sensor drives the adjacent simulated geographic profile. */
 import { FormEvent, useEffect, useState } from "react";
 import CongressCommandCenter from "./CongressCommandCenter";
+import ProsecutorDirectory from "./ProsecutorDirectory";
 import {
   ArrowUpRight,
   BrainCircuit,
@@ -41,6 +42,7 @@ const navLinks = [
   { label: "Orbit", href: "#orbit" },
   { label: "AI command center", href: "#ai-mode" },
   { label: "Phone / Civic", href: "#phone" },
+  { label: "Prosecutors", href: "#prosecutors" },
   { label: "Creative", href: "#creative-projects" },
   { label: "Ledger", href: "#ledger-projects" },
 ];
@@ -400,6 +402,7 @@ export default function App() {
         </section>
 
         <CongressCommandCenter onActivity={setActivity} />
+        <ProsecutorDirectory onActivity={setActivity} />
 
         <section className="module-section creative-section" id="creative-projects" aria-labelledby="creative-title"><span className="section-index" aria-hidden="true">03</span>
           <div className="section-heading"><div><span className="eyebrow"><Sparkles size={15} /> Creative Projects</span><h2 id="creative-title">Build the next <em>small world.</em></h2></div><p>Select a medium, give it an intention, then make its first room.</p></div>
