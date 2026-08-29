@@ -5,12 +5,14 @@ import App from "./App";
 import "./index.css";
 import "./brand-ledger.css";
 
-// GitHub Pages serves this SPA beneath /Bonds-Studio/. Normalize the pathname
-// before App's lightweight router evaluates it so deep links such as /domains
-// and /phone/earth work correctly on the deployed site.
+// GitHub Pages serves this SPA beneath /Bonds-Studio/. Normalize both direct
+// deep links and the 404.html fallback redirect before App's lightweight router runs.
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const browserPath = window.location.pathname;
-if (basePath && browserPath.startsWith(basePath)) {
+const redirectPath = new URLSearchParams(window.location.search).get("redirect");
+if (redirectPath) {
+  window.history.replaceState({}, "", redirectPath);
+} else if (basePath && browserPath.startsWith(basePath)) {
   const appPath = browserPath.slice(basePath.length) || "/";
   window.history.replaceState({}, "", `${appPath}${window.location.search}${window.location.hash}`);
 }
