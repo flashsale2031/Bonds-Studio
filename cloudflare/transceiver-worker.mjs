@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const auth = request => { const value = request.headers.get("authorization") || ""; return value.startsWith("Bearer ") ? value.slice(7) : ""; };
+const deviceIdFromToken = token => token.includes(".") ? token.slice(0, token.indexOf(".")) : "";
 
 export default {
   async fetch(request, env) {
@@ -15,8 +16,9 @@ export default {
       return env.DEVICES.get(id).fetch(new Request("https://device/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
     }
     const token = auth(request);
-    if (!token) return json({ error: "device_authentication_required" }, 401);
-    const id = env.DEVICES.idFromName(`token:${token.slice(0, 24)}`);
+    const deviceId = deviceIdFromToken(token);
+    if (!token || !deviceId) return json({ error: "device_authentication_required" }, 401);
+    const id = env.DEVICES.idFromName(deviceId);
     return env.DEVICES.get(id).fetch(new Request(`https://device${url.pathname}`, { method: request.method, headers: request.headers, body: request.method === "GET" ? undefined : request.body }));
   }
 };
@@ -28,10 +30,10 @@ export class DeviceSession extends DurableObject {
     const current = await this.ctx.storage.get("device");
     if (url.pathname === "/register" && request.method === "POST") {
       const body = await request.json();
-      const token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+      const token = `${String(body.id)}.${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "")}`;
       const device = { id: String(body.id), name: String(body.name), token, connected: true, lastSeen: new Date().toISOString(), transport: "https-heartbeat", capabilities: Array.isArray(body.capabilities) ? body.capabilities : [] };
       await this.ctx.storage.put("device", device);
-      return json({ device: { ...device, token: undefined }, deviceToken: token }, 201);
+      return json({ device: publicDevice(device), deviceToken: token }, 201);
     }
     if (!current || auth(request) !== current.token) return json({ error: "device_authentication_required" }, 401);
     if (url.pathname === "/devices/heartbeat" && request.method === "POST") {
