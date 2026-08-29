@@ -1,51 +1,17 @@
-import { Toaster } from "@/components/ui/sonner";
-import React from "react";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import DomainsPage from "./pages/DomainsPage";
-import AccountsPage from "./pages/AccountsPage";
-import TrendsPage from "./pages/TrendsPage";
-import NotesPage from "./pages/NotesPage";
-import MonetizePage from "./pages/MonetizePage";
-import SettingsPage from "./pages/SettingsPage";
-import AiModePage from "./pages/AiModePage";
-import VoiceControlPage from "./pages/VoiceControlPage";
-import PhonePage from "./pages/PhonePage";
+import React, { useState } from "react";
 import ContactEarthPage from "./pages/ContactEarthPage";
-import BatteryPage from "./pages/BatteryPage";
+import PhonePage from "./pages/PhonePage";
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/ledger" component={Home} />
-      <Route path="/domains" component={DomainsPage} />
-      <Route path="/domains/zones" component={DomainsPage} />
-      <Route path="/domains/records" component={DomainsPage} />
-      <Route path="/domains/settings" component={DomainsPage} />
-      <Route path="/domains/lookup" component={DomainsPage} />
-      <Route path="/accounts" component={AccountsPage} />
-      <Route path="/trends" component={TrendsPage} />
-      <Route path="/notes" component={NotesPage} />
-      <Route path="/monetize" component={MonetizePage} />
-      <Route path="/settings" component={SettingsPage} />
-      <Route path="/ai-mode" component={AiModePage} />
-      <Route path="/voice-control" component={VoiceControlPage} />
-      <Route path="/phone" component={PhonePage} />
-      <Route path="/phone/earth" component={ContactEarthPage} />
-      <Route path="/settings/battery" component={BatteryPage} />
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
-  );
+export default function App() {
+  const [path, setPath] = useState(window.location.pathname);
+  const navigate = (next: string) => { window.history.pushState({}, "", next); setPath(next); };
+  React.useEffect(() => { const onPop = () => setPath(window.location.pathname); window.addEventListener("popstate", onPop); return () => window.removeEventListener("popstate", onPop); }, []);
+  return <main style={{ minHeight: "100vh", background: "#f6f2e9", color: "#19211e", fontFamily: "system-ui, sans-serif" }}>
+    <nav style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 20px", background: "#1a2820", color: "white" }}>
+      <strong style={{ marginRight: "auto", letterSpacing: ".08em" }}>BONDS STUDIO</strong>
+      <button onClick={() => navigate("/phone")} style={{ padding: "8px 12px", cursor: "pointer" }}>Phone</button>
+      <button onClick={() => navigate("/phone/earth")} style={{ padding: "8px 12px", cursor: "pointer" }}>Contact Earth</button>
+    </nav>
+    {path === "/phone/earth" ? <ContactEarthPage /> : <PhonePage onNavigate={navigate} />}
+  </main>;
 }
-
-function App() {
-  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster richColors position="top-right" /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
-}
-
-export default App;
