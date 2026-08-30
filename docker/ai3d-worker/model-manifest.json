@@ -1,0 +1,18 @@
+{
+  "models": {
+    "triposr": {
+      "repo": "stabilityai/TripoSR",
+      "license": "MIT",
+      "weight_source": "Hugging Face / upstream project",
+      "estimated_single_image_vram_gb": 6,
+      "required_for": ["draft", "fallback"]
+    },
+    "stable-fast-3d": {
+      "repo": "stabilityai/stable-fast-3d",
+      "license": "See upstream model repository and gated model terms",
+      "weight_source": "Hugging Face gated model",
+      "required_for": ["production"]
+    }
+  },
+  "policy": "Do not commit model weights or access tokens into Git. Download weights at worker provisioning time using approved credentials and retain license metadata."
+}
