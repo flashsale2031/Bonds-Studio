@@ -1,0 +1,15 @@
+export const MESH_ACTION_CATALOG=[
+{id:"prepare-input",label:"Prepare input",group:"Source",rerunnable:true},
+{id:"ai-reconstruct",label:"AI reconstruction",group:"Geometry",rerunnable:true},
+{id:"validate-mesh",label:"Validate mesh",group:"Quality",rerunnable:true},
+{id:"normalize-metrics",label:"Normalize metrics",group:"Geometry",rerunnable:true},
+{id:"repair-mesh",label:"Repair mesh",group:"Geometry",rerunnable:true},
+{id:"remesh",label:"Remesh",group:"Geometry",rerunnable:true},
+{id:"uv-unwrap",label:"UV unwrap",group:"Surface",rerunnable:true},
+{id:"normals",label:"Recalculate normals",group:"Surface",rerunnable:true},
+{id:"materials",label:"Build materials",group:"Surface",rerunnable:true},
+{id:"lod",label:"Generate LODs",group:"Optimization",rerunnable:true},
+{id:"collision",label:"Generate collision",group:"Physics",rerunnable:true},
+{id:"final-validation",label:"Final validation",group:"Quality",rerunnable:true},
+{id:"export-glb",label:"Export GLB",group:"Output",rerunnable:true},
+] as const;
