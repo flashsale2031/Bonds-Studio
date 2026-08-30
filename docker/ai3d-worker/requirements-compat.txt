@@ -1,0 +1,14 @@
+# Baseline validated against upstream project requirements.
+# CUDA/PyTorch wheels must match the host CUDA major version.
+torch
+ torchvision
+transformers==4.35.0
+omegaconf==2.3.0
+Pillow==10.1.0
+einops==0.7.0
+trimesh==4.0.5
+huggingface-hub
+imageio[ffmpeg]
+rembg
+xatlas==0.0.9
+moderngl==5.10.0
