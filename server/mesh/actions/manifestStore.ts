@@ -1,0 +1,3 @@
+import fs from "node:fs/promises";import path from "node:path";import type {MeshRunManifest} from "./actionManifest";
+export async function saveManifest(root:string,manifest:MeshRunManifest){const dir=path.join(root,"runs",manifest.runId);await fs.mkdir(dir,{recursive:true});manifest.updatedAt=new Date().toISOString();const file=path.join(dir,"manifest.json");await fs.writeFile(file,JSON.stringify(manifest,null,2),"utf8");return file;}
+export async function loadManifest(root:string,runId:string){const file=path.join(root,"runs",runId,"manifest.json");return JSON.parse(await fs.readFile(file,"utf8")) as MeshRunManifest;}
