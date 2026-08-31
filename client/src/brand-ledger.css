@@ -166,3 +166,18 @@
 .contact-earth-command-menu select { appearance: auto; }
 @media (max-width: 960px) and (min-width: 681px) { .contact-earth-body { grid-template-columns: minmax(0, 1fr) 240px; } }
 @media (max-width: 680px) { .contact-earth-body { grid-template-columns: 1fr; } .contact-earth-globe { max-width: 100%; } }
+
+/* Earth Definition modes */
+.contact-earth-command-menu { grid-template-columns: 110px minmax(0, 1fr) 180px auto; }
+.contact-earth-definition-field { min-width: 0; display: block; }
+.contact-earth-definition-select { min-height: 40px; width: 100%; cursor: pointer; border-radius: 2px; transition: border-color .18s ease, box-shadow .18s ease; }
+.contact-earth-definition-select:focus { border-color: rgba(201,168,76,.82); box-shadow: 0 0 0 3px rgba(201,168,76,.13); outline: none; }
+.contact-earth-definition-select option { background: #10251f; color: #fff; }
+.definition-2d .contact-earth-globe { border-radius: 12px; border-style: dashed; }
+.definition-2d .contact-earth-center-marker > span:first-child { border-radius: 2px; }
+.definition-3d .contact-earth-globe { border-radius: 999px; }
+.definition-reality .contact-earth-globe { border-color: rgba(221,96,85,.72); box-shadow: inset 0 0 70px rgba(0,0,0,.8), 0 0 0 5px rgba(221,96,85,.08), 0 24px 66px rgba(26,40,32,.24); }
+.definition-reality .contact-earth-globe::after { position: absolute; inset: 0; z-index: 15; pointer-events: none; content: "REALITY · SURVEILLANCE FRAME"; display: flex; align-items: flex-start; justify-content: flex-end; padding: 16px; border-radius: inherit; background: repeating-linear-gradient(0deg, rgba(221,96,85,.05) 0 1px, transparent 1px 5px); color: rgba(255,190,170,.82); font: 8px/1 "DM Mono", monospace; letter-spacing: .14em; }
+.definition-reality .contact-earth-center-marker { z-index: 18; }
+@media (max-width: 900px) and (min-width: 681px) { .contact-earth-command-menu { grid-template-columns: 92px minmax(0, 1fr) 150px auto; } }
+@media (max-width: 680px) { .contact-earth-command-menu { grid-template-columns: 1fr; } .contact-earth-definition-select { width: 100%; } }
