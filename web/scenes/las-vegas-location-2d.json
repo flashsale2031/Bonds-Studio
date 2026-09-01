@@ -18,5 +18,6 @@
     {"start":"20:00","end":"23:00","phase":"night","activity":"evening and nighttime activity","intensity":0.68},
     {"start":"23:00","end":"24:00","phase":"late night","activity":"activity gradually decreases","intensity":0.38}
   ],
-  "animation":{"camera":"fixed top-down location view","markers":"abstract animated flow particles","traffic":"generalized moving strokes","people":"not individually represented","buildings":"static footprints","lighting":"day/night interpolation","loop":true}
+  "animation":{"camera":"fixed top-down location view","markers":"abstract animated flow particles","traffic":"generalized moving strokes","people":"not individually represented","buildings":"static footprints","lighting":"day/night interpolation","loop":true},
+  "storage":{"format":"procedural-keyframe","renderedFramesStored":false,"canonicalPlaybackRate":192,"canonicalPlaybackLabel":"192× faster","timelineEncoding":"phase keyframes + parameters; interpolate at playback time","sourceDurationSeconds":86400,"canonicalReviewDurationSeconds":450,"estimatedFrameStorageBytes":0,"rationale":"Store scene instructions and sparse keyframes instead of 2,592,000 rendered 30-fps frames. The browser reconstructs the 24-hour scene procedurally and can play it at 192×, 1×, or down to 1/192× without storing duplicate video frames."}
 }
