@@ -45,6 +45,8 @@ jobs:
           if [ -f ./web/earth-frame.html ]; then cp ./web/earth-frame.html ./dist/earth-frame.html; fi
           if [ -f ./web/bonds-studio.css ]; then cp ./web/bonds-studio.css ./dist/bonds-studio.css; fi
           if [ -f ./web/bonds-studio.js ]; then cp ./web/bonds-studio.js ./dist/bonds-studio.js; fi
+          test -f ./dist/scenes/las-vegas-location-2d.html
+          test -f ./dist/scenes/las-vegas-location-2d.json
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
