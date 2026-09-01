@@ -1,0 +1,22 @@
+{
+  "sceneId":"las-vegas-bonanza-2d-24h",
+  "title":"3500 E Bonanza Rd — 2D Location Activity Scene",
+  "location":{"address":"3500 E Bonanza Rd, Las Vegas, NV 89110","latitude":36.173803,"longitude":-115.097758},
+  "durationSeconds":86400,
+  "fps":30,
+  "projection":"2D top-down schematic",
+  "privacy":"This is a generalized, non-surveillance activity simulation. It does not represent observed or predicted activity at the address.",
+  "layers":["roads","buildings","green-space","transit-zones","ambient-light","activity-zones","location-marker"],
+  "timeline":[
+    {"start":"00:00","end":"04:00","phase":"overnight","activity":"low ambient activity","intensity":0.12},
+    {"start":"04:00","end":"06:00","phase":"pre-dawn","activity":"gradual neighborhood movement","intensity":0.22},
+    {"start":"06:00","end":"09:00","phase":"morning","activity":"commute and local activity","intensity":0.62},
+    {"start":"09:00","end":"12:00","phase":"late morning","activity":"daytime local activity","intensity":0.56},
+    {"start":"12:00","end":"14:00","phase":"midday","activity":"midday activity","intensity":0.64},
+    {"start":"14:00","end":"17:00","phase":"afternoon","activity":"steady daytime activity","intensity":0.58},
+    {"start":"17:00","end":"20:00","phase":"evening","activity":"commute and evening activity","intensity":0.76},
+    {"start":"20:00","end":"23:00","phase":"night","activity":"evening and nighttime activity","intensity":0.68},
+    {"start":"23:00","end":"24:00","phase":"late night","activity":"activity gradually decreases","intensity":0.38}
+  ],
+  "animation":{"camera":"fixed top-down location view","markers":"abstract animated flow particles","traffic":"generalized moving strokes","people":"not individually represented","buildings":"static footprints","lighting":"day/night interpolation","loop":true}
+}
