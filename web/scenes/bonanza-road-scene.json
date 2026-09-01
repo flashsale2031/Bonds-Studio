@@ -1,0 +1,18 @@
+{
+  "id":"las-vegas-bonanza-3500",
+  "name":"3500 E Bonanza Road — Las Vegas",
+  "location":{"address":"3500 E Bonanza Rd, Las Vegas, NV 89110","latitude":36.173803,"longitude":-115.097758,"timezone":"America/Los_Angeles"},
+  "source":"location-anchored-scene",
+  "scene":{"center":{"lat":36.173803,"lng":-115.097758},"radiusMeters":500,"camera":{"altitudeMeters":900,"heading":25,"pitch":48},"terrain":true,"satellite":true},
+  "timeline":{"durationSeconds":30,"fps":30,"loop":true},
+  "shots":[
+    {"id":"orbital","start":0,"duration":6,"camera":"globe-to-city","description":"Earth-to-Las-Vegas orbital descent ending over the Bonanza Road location."},
+    {"id":"approach","start":6,"duration":7,"camera":"north-east-approach","description":"Smooth aerial approach toward 3500 E Bonanza Rd."},
+    {"id":"street","start":13,"duration":8,"camera":"street-level","description":"Street-level establishing shot centered on the selected location."},
+    {"id":"orbit","start":21,"duration":6,"camera":"location-orbit","description":"Low-altitude orbit around the location marker."},
+    {"id":"hero","start":27,"duration":3,"camera":"hero-pullback","description":"Pull back to show the location in its Las Vegas context."}
+  ],
+  "layers":["earth","terrain","roads","location-marker","camera-path","lighting","atmosphere","title-card"],
+  "marker":{"label":"3500 E Bonanza Rd","style":"studio-location-pin","pulse":true},
+  "export":{"formats":["webm","mp4","glb-camera-path","scene-json"],"preview":"webgl"}
+}
