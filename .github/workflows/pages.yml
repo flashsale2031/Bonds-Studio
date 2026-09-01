@@ -38,6 +38,11 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Type-check and build
         run: pnpm run check && pnpm run build
+      - name: Publish standalone HTML scenes
+        run: |
+          mkdir -p ./dist/scenes
+          cp -R ./web/scenes/. ./dist/scenes/
+          if [ -f ./web/earth-frame.html ]; then cp ./web/earth-frame.html ./dist/earth-frame.html; fi
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
